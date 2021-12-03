@@ -19,6 +19,7 @@ void Start()
 	InitPlayer(g_Player, g_CellArr);
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	std::cout << "hello Tanguy" << std::endl;
+	std::cout << "a change that I add at 10:05AM, 3rd Dec" << std::endl;
 }
 
 void Draw()
