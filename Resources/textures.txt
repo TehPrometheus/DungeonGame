@@ -26,8 +26,7 @@
 {wall_sharp_corner_right.png,wall_sharp_corner_right,true}
 {basic_sword_up.png,basic_sword_up}
 {basic_sword_down.png,basic_sword_down}
-this line is trash and must be deleted in conflict resolution
 {basic_sword_right.png,basic_sword_right}
-this line is trash and must be deleted in conflict resolution
 {basic_sword_left.png,basic_sword_left}
-MORE TRASH
+{basic_sword_left.png,basic_sword_left}
+
