@@ -66,9 +66,9 @@ struct Item
 struct Weapon
 {
 	std::string name;
-	Texture texture;
-	WeaponType type;
-	float damageOutput;
+	Texture texture{};
+	WeaponType type{};
+	float damageOutput{};
 };
 struct Player
 {

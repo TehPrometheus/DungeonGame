@@ -1046,12 +1046,6 @@ void InitLevels(Level levels[],Room rooms[])
 
 /*
 	CHANGES IN THIS LOCAL BUILD
-	added level handling category
-	added fetchroom
-	added initlevel
-	added initrooms
-	updated deletetextures to remove the textures stuffed in the g_Rooms and g_Levels globals
-	changed 2nd member of room struct to roomName
 
 */
 #pragma endregion ownDefinitions
