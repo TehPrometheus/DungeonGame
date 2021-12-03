@@ -28,5 +28,8 @@
 {basic_sword_down.png,basic_sword_down}
 this line is trash and must be deleted in conflict resolution
 {basic_sword_right.png,basic_sword_right}
-this line is trash and must be deleted in conflict resolution
+{basic_sword_left.png,basic_sword_left}
+{knight_idle_anim.png,knight_idle_anim}
+{knight_run_anim.png,knight_run_anim}
+{knight_hit_anim.png,knight_hit_anim}
 {basic_sword_left.png,basic_sword_left}
