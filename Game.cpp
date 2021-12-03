@@ -410,9 +410,6 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 }
 void DrawPlayer(const Player& player, Sprite Sprites[])
 {
-	int idle{ 0 };
-	int run{ 1 };
-
 	Rectf srcRect{};
 
 	switch (player.animState)
@@ -435,10 +432,13 @@ void DrawPlayer(const Player& player, Sprite Sprites[])
 		srcRect.left = Sprites[int(AnimStates::runLeft)].currentFrame * srcRect.width;
 		srcRect.bottom = srcRect.height;
 		break;
+	case AnimStates::hit:
+		srcRect.width = Sprites[int(AnimStates::hit)].texture.width;
+		srcRect.height = Sprites[int(AnimStates::hit)].texture.height;
+		srcRect.left = 0;
+		srcRect.bottom = srcRect.height;
+		break;
 	}
-
-
-
 	DrawTexture(player.sprite.texture, player.animationPos, srcRect);
 
 }
@@ -821,11 +821,15 @@ void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSiz
 		else if (isNextToPlayerX 
 			&&   g_Player.health > 0.f)
 		{
+			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
+			g_Player.animState = AnimStates::hit;
 			g_Player.health -= enemy.damageOutput;
 			enemy.animationPos.left -= (enemy.animationPos.left - g_Player.dstRect.left) / 2;
 		}
 		else if (isNextToPlayerY && g_Player.health > 0.f)
 		{
+			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
+			g_Player.animState = AnimStates::hit;
 			g_Player.health -= enemy.damageOutput;
 			enemy.animationPos.bottom -= (enemy.animationPos.bottom - g_Player.dstRect.bottom) / 2;
 		}
@@ -1181,7 +1185,7 @@ void InitPlayerSprites(Sprite Sprites[])
 	Sprites[int(AnimStates::hit)].frames = 1;
 	Sprites[int(AnimStates::hit)].currentFrame = 0;
 	Sprites[int(AnimStates::hit)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::hit)].frameTime = 1 / 15.0f;
+	Sprites[int(AnimStates::hit)].frameTime = 1 / 1.0f;
 
 
 }
@@ -1211,14 +1215,6 @@ void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
 		{
 			++Sprites[int(AnimStates::runLeft)].currentFrame %= Sprites[int(AnimStates::runLeft)].frames;
 			Sprites[int(AnimStates::runLeft)].accumulatedTime -= Sprites[int(AnimStates::runLeft)].frameTime;
-		}
-		break;
-	case AnimStates::hit:
-		Sprites[int(AnimStates::hit)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::hit)].accumulatedTime > Sprites[int(AnimStates::hit)].frameTime)
-		{
-			++Sprites[int(AnimStates::hit)].currentFrame %= Sprites[int(AnimStates::hit)].frames;
-			Sprites[int(AnimStates::hit)].accumulatedTime -= Sprites[int(AnimStates::hit)].frameTime;
 		}
 		break;
 	}
