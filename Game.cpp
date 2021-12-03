@@ -17,6 +17,7 @@ void Start()
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr);
+	InitInteractables();
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	std::cout << "hello Tanguy" << std::endl;
 	std::cout << "a change that I add at 10:05AM, 3rd Dec" << std::endl;
@@ -447,6 +448,11 @@ void DrawWeaponInventory(const Player& player)
 		SetColor(g_White);
 		DrawRect(location);
 		DrawTexture(player.weaponInventory[index].texture, location);
+		if (player.weaponInventory[index].texture.id == NULL)
+		{
+			SetColor(g_Grey);
+			FillRect(location);
+		}
 		if (player.selectedWeapon == index)
 		{
 			SetColor(g_Red);
@@ -553,7 +559,7 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 // Weapon Handling
 void InitWeapons()
 {
-	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.0f);
+	g_Weapons[0] = InitializeWeapon("basic_sword", "enemy_zombie", WeaponType::sword, 2.0f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -579,6 +585,27 @@ Weapon FetchWeapon(const std::string& name)
 }
 #pragma endregion weaponHandling
 
+#pragma region interactableHandling
+// Interactable Handling
+void InitInteractables() 
+{
+	InitializeInteractable("basic_sword", InteractableType::weaponDrop);
+}
+Interactable InitializeInteractable(const std::string& linkedItem, InteractableType type)
+{
+	Interactable initializedInteractable{};
+	initializedInteractable.type = type;
+	if (type == InteractableType::weaponDrop)
+	{
+		initializedInteractable.linkedWeapon = FetchWeapon(linkedItem);
+	}
+	else if (type == InteractableType::itemDrop)
+	{
+	}
+	return initializedInteractable;
+}
+#pragma endregion interactableHandling
+
 #pragma region enemyHandling
 // Enemy Handling
 int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
@@ -593,11 +620,12 @@ int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
 }
 void InitEnemies(Enemy enemyArr[], const int enemyArrSize, Cell cellArr[], const int cellArrSize)
 {
-	enemyArr[0] = InitializeEnemy("bat");
+	int enemyNumber{};
+	enemyArr[enemyNumber] = InitializeEnemy("bat");
 
 
 
-	for (int index{}; index < g_EnemyArrSize; ++index)
+	for (int index{}; index < enemyNumber + 1; ++index)
 	{
 		enemyArr[index].dstRect = cellArr[GetRandomSpawn(cellArr, cellArrSize)].dstRect;
 		enemyArr[index].animationPos = enemyArr[index].dstRect;
@@ -612,7 +640,7 @@ void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize)
 	}
 }
 
-Enemy InitializeEnemy(EnemyType type, std::string textureName, float maxHealth, float damage, float timePerAction, int viewRange)
+Enemy InitializeEnemy(const EnemyType& type, const std::string& textureName, float maxHealth, float damage, float timePerAction, int viewRange)
 {
 	Enemy enemy{};
 	enemy.type = type;
@@ -643,9 +671,7 @@ void DrawEnemies(Enemy enemyArr[], int arrSize)
 {
 	for (int index{}; index < arrSize; ++index)
 	{
-		if (enemyArr[index].health > 0.f) {
-			DrawTexture(enemyArr[index].texture, enemyArr[index].animationPos);
-		}
+		DrawTexture(enemyArr[index].texture, enemyArr[index].animationPos);
 	}
 }
 void UpdateAnimationPos(float elapsedSec, Enemy& enemy)
@@ -688,6 +714,11 @@ void DrawEnemyHealthBars(Enemy enemyArr[])
 			DrawEnemyHealth(enemyArr[index]);
 		}
 	}
+}
+void DestroyEnemy(Enemy& enemy) 
+{
+	Enemy defaultEnemy{};
+	enemy = defaultEnemy;
 }
 
 int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize)
@@ -813,17 +844,19 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 {
 	for (int index{}; index < enemyArrSize; ++index)
 	{
-		if (enemyArr[index].health > 0.f) {
-			if (enemyArr[index].type == EnemyType::basic)
-			{
-				BasicEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
-			}
-			else if (enemyArr[index].type == EnemyType::ranged)
-			{
-				RangedEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
-			}
-			UpdateAnimationPos(elapsedSec, enemyArr[index]);
+		if (enemyArr[index].health <= 0.f && enemyArr[index].maxHealth != 0)
+		{ 
+			DestroyEnemy(enemyArr[index]);
+		} 
+		else if (enemyArr[index].type == EnemyType::basic)
+		{
+			BasicEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
 		}
+		else if (enemyArr[index].type == EnemyType::ranged)
+		{
+			RangedEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
+		}
+		UpdateAnimationPos(elapsedSec, enemyArr[index]);
 	}
 }
 #pragma endregion enemyHandling
