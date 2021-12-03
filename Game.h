@@ -24,6 +24,7 @@ const int g_ItemInventorySize{ 5 };
 const int g_ItemsInGame{ 10 };
 const int g_WeaponInventorySize{ 3 };
 const int g_WeaponsInGame{ 10 };
+const int g_PlayerSpritesSize{ 2 };
 
 enum class EnemyType
 {
@@ -59,6 +60,13 @@ enum class Direction
 	none
 };
 
+enum class AnimStates
+{
+	idle,
+	run,
+	hit
+};
+
 struct Cell
 {
 	Rectf dstRect;
@@ -84,14 +92,26 @@ struct Interactable
 	Item linkedItem;
 	Rectf dstRect;
 };
+
+struct Sprite
+{
+	Texture texture;
+	int frames;
+	int cols;
+	float frameTime;
+	int currentFrame;
+	float accumulatedTime;
+};
+
 struct Player
 {
 	Rectf dstRect;
 	Rectf animationPos;
-	Texture texture;
+	Sprite sprite;
 	float speedModifier{ 5.0f };
 	float timeTracker{ 0.0f };
 
+	AnimStates animState;
 	Direction facing;
 
 	float health{};
@@ -133,6 +153,7 @@ struct Level
 };
 
 
+
 Room g_Rooms[g_RoomArrSize]{};
 Level g_Level1{};
 Weapon g_Weapons[g_WeaponsInGame];
@@ -143,7 +164,7 @@ Enemy g_EnemyArr[g_EnemyArrSize]{};
 Cell g_CellArr[g_GridSize]{};
 Texture g_Numbers[g_GridSize]{};
 NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
-
+Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -185,8 +206,8 @@ void DrawGridTextures(Cell cellArr[], int nrRows, int nrCols);
 void SetObstacles(Cell cellArr[], int nrRows, int nrCols); //sets all appropriate cells to 'isObstacle = true' for the appropriate textures
 
 // Player Handling
-void InitPlayer(Player& player, Cell cellArr[]);
-void DrawPlayer(const Player& player);
+void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[]);
+void DrawPlayer(const Player& player, Sprite Sprites[]);
 void UpdateAnimationPos(float elapsedSec, Player& player);
 
 void DrawWeaponInventory(const Player& player);
@@ -229,9 +250,11 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize);
 
 // Input Handling
-void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, float elapsedSec);
+void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec);
 void SwitchPlayer(Player& player);
 void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e);
+void ProcessRunAnimState(Player& player, Sprite Sprites[], SDL_Keycode key);
+void ProcessIdleAnimState(Player& player, Sprite Sprites[], SDL_Keycode key);
 
 // Level writing/reading handling
 void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFileName);
@@ -245,6 +268,9 @@ Room FetchRoom(std::string roomName);
 // Level Handling
 void InitLevels(Level lvl, Room rooms[]);
 
+// Sprite Handling
+void InitPlayerSprites(Sprite Sprites[]);
+void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec);
 
 #pragma endregion ownDeclarations
 

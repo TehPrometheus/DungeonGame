@@ -16,10 +16,9 @@ void Start()
 	LoadRoomLayout(g_CellArr, "bottom_door_room.room");
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
-	InitPlayer(g_Player, g_CellArr);
+	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
 	InitInteractables();
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
-	int myFavoriteInt{ 7 };
 }
 
 void Draw()
@@ -30,7 +29,7 @@ void Draw()
 	DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 	DrawEnemies(g_EnemyArr, g_EnemyArrSize);
 	DrawEnemyHealthBars(g_EnemyArr);
-	DrawPlayer(g_Player);
+	DrawPlayer(g_Player, g_PlayerSprites);
 	DrawWeaponInventory(g_Player);
 	DrawPlayerHealth(g_Player);
 	//Comment this out to disable the debug grid
@@ -42,7 +41,8 @@ void Update(float elapsedSec)
 {
 	UpdateAnimationPos(elapsedSec, g_Player);
 	UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
-	ProcessMovement(g_Player, g_CellArr, g_GridSize, elapsedSec);
+	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
+	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
 }
 
 void End()
@@ -56,16 +56,12 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-
+	ProcessRunAnimState(g_Player, g_PlayerSprites, key);
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
-	switch (key) {
-	case SDLK_TAB:
-		CycleWeapons(g_Player);
-		break;
-	}
+	ProcessIdleAnimState(g_Player, g_PlayerSprites, key);
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
@@ -248,13 +244,10 @@ void LoadTexture(const std::string texturePath, NamedTexture& namedTexture, std:
 	}
 }
 
-// SOMETHING IN THIS FUNCTION THROWS AN ERROR
-// SOMETHING IN THIS FUNCTION THROWS AN ERROR
-// SOMETHING IN THIS FUNCTION THROWS AN ERROR
 void DeleteTextures()
 {
 	// Delete player textures in player struct
-	DeleteTexture(g_Player.texture);
+	DeleteTexture(g_Player.sprite.texture);
 
 	// Delete named textures array
 	for (int i = 0; i < g_TexturesSize; i++)
@@ -299,6 +292,14 @@ void DeleteTextures()
 			DeleteTexture(g_Rooms[i].cells[j].texture);
 		}
 	}
+
+	// Delete textures stored in the g_PlayerSprites array
+	for (int i = 0; i < g_PlayerSpritesSize; i++)
+	{
+		DeleteTexture(g_PlayerSprites[i].texture);
+
+	}
+
 }
 Texture FetchTexture(std::string textureName)
 {
@@ -393,18 +394,45 @@ void SetObstacles(Cell cellArr[], int nrRows, int nrCols)
 
 #pragma region playerHandling
 // Player Handling
-void InitPlayer(Player& player, Cell cellArr[])
+void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 {
-	player.texture = FetchTexture("player_right");
+	int idle{ 0 };
+
+	InitPlayerSprites(Sprites);
+	player.sprite.texture = Sprites[idle].texture;
+	player.animState = AnimStates::idle;
 	player.dstRect = cellArr[40].dstRect; // 40 just a random location chosen for testing purposes
 	player.animationPos = player.dstRect;
 	player.health = player.maxHealth;
 	player.weaponInventory[0] = FetchWeapon("basic_sword");
 	player.selectedWeapon = 0;
 }
-void DrawPlayer(const Player& player)
+void DrawPlayer(const Player& player, Sprite Sprites[])
 {
-	DrawTexture(player.texture, player.animationPos);
+	int idle{ 0 };
+	int run{ 1 };
+
+	Rectf srcRect{};
+
+	switch (player.animState)
+	{
+	case AnimStates::idle:
+		srcRect.width = Sprites[idle].texture.width / Sprites[idle].cols;
+		srcRect.height = Sprites[idle].texture.height;
+		srcRect.left = Sprites[idle].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::run:
+		srcRect.width = Sprites[run].texture.width / Sprites[run].cols;
+		srcRect.height = Sprites[run].texture.height;
+		srcRect.left = Sprites[run].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	}
+
+
+
+	DrawTexture(player.sprite.texture, player.animationPos, srcRect);
 
 }
 void UpdateAnimationPos(float elapsedSec, Player& player)
@@ -858,7 +886,7 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 
 #pragma region inputHandling
 // Input Handling
-void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, float elapsedSec)
+void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec)
 {
 	float minTimeBetweenActions{ 1.f / player.speedModifier }; // THIS IS PROBABLY THE PROBLEM
 	int newIndex{};
@@ -912,10 +940,10 @@ void SwitchPlayer(Player& player)
 	Texture playerUp = FetchTexture("player_up");
 	Texture playerDown = FetchTexture("player_down");
 
-	if (player.facing == Direction::right) player.texture = playerRight;
-	if (player.facing == Direction::up) player.texture = playerUp;
-	if (player.facing == Direction::left) player.texture = playerLeft;
-	if (player.facing == Direction::down) player.texture = playerDown;
+	if (player.facing == Direction::right) player.sprite.texture = playerRight;
+	if (player.facing == Direction::up) player.sprite.texture = playerUp;
+	if (player.facing == Direction::left) player.sprite.texture = playerLeft;
+	if (player.facing == Direction::down) player.sprite.texture = playerDown;
 }
 void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 {
@@ -939,7 +967,23 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 		player.facing = Direction::down;
 	}
 	else player.facing = Direction::left;
-	SwitchPlayer(player);
+	//SwitchPlayer(player);
+}
+void ProcessRunAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
+{
+	if (key == SDLK_q || key == SDLK_z || key == SDLK_s || key == SDLK_d)
+	{
+		player.sprite.texture = Sprites[int(AnimStates::run)].texture;
+		player.animState = AnimStates::run;
+	}
+}
+void ProcessIdleAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
+{
+	if (key == SDLK_q || key == SDLK_z || key == SDLK_s || key == SDLK_d)
+	{
+		player.sprite.texture = Sprites[int(AnimStates::idle)].texture;
+		player.animState = AnimStates::idle;
+	}
 }
 #pragma endregion inputHandling
 
@@ -1052,8 +1096,12 @@ void InitRooms(Room rooms[])
 }
 void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize)
 {
-	// this function should load the appropriate next room if the player walks on a tile that has an open door on it. OK
-	// 
+	/*
+		This function should load the appropriate next room if the player walks on a 
+		tile that has an open door on it. OK
+		
+	
+	*/
 	int playerIndex = GetPlayerGridIndex(player, cellArr, cellArrSize);
 	
 	if (FetchTextureName(cellArr[playerIndex].texture) == "door1" || FetchTextureName(cellArr[playerIndex].texture) == "door2")
@@ -1071,7 +1119,6 @@ void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize)
 void InitLevels(Level lvl,Room rooms[])
 {
 	// this function should fill the g_levels[0] with rooms
-	int level{ 0 };
 	int index{ 0 };
 
 
@@ -1088,8 +1135,57 @@ void InitLevels(Level lvl,Room rooms[])
 }
 #pragma endregion levelHandling
 
-/*
-	CHANGES IN THIS LOCAL BUILD
+#pragma region spriteHandling
+void InitPlayerSprites(Sprite Sprites[])
+{
+	int idle{ 0 };
+	int run{ 1 };
 
-*/
+	// initialize idle anim
+	Sprites[idle].texture = FetchTexture("knight_idle_anim");
+	Sprites[idle].cols = 4;
+	Sprites[idle].frames = 4;
+	Sprites[idle].currentFrame = 0;
+	Sprites[idle].accumulatedTime = 0.0f;
+	Sprites[idle].frameTime = 1 / 8.0f;
+
+	// initialize run anim
+	Sprites[run].texture = FetchTexture("knight_run_anim");
+	Sprites[run].cols = 4;
+	Sprites[run].frames = 4;
+	Sprites[run].currentFrame = 0;
+	Sprites[run].accumulatedTime = 0.0f;
+	Sprites[run].frameTime = 1 / 15.0f;
+
+
+
+
+}
+void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
+{
+	int idle{ 0 };
+	int run{ 1 };
+
+	switch (g_Player.animState)
+	{
+	case AnimStates::idle:
+		Sprites[idle].accumulatedTime += elapsedSec;
+		if (Sprites[idle].accumulatedTime > Sprites[idle].frameTime)
+		{
+			++Sprites[idle].currentFrame %= Sprites[idle].frames;
+			Sprites[idle].accumulatedTime -= Sprites[idle].frameTime;
+		}
+		break;
+	case AnimStates::run:
+		Sprites[run].accumulatedTime += elapsedSec;
+		if (Sprites[run].accumulatedTime > Sprites[run].frameTime)
+		{
+			++Sprites[run].currentFrame %= Sprites[run].frames;
+			Sprites[run].accumulatedTime -= Sprites[run].frameTime;
+		}
+		break;
+	}
+}
+#pragma endregion spriteHandling
+
 #pragma endregion ownDefinitions
