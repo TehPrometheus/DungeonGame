@@ -18,7 +18,7 @@ void Start()
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr);
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
-
+	std::cout << "hello Tanguy" << std::endl;
 }
 
 void Draw()
