@@ -20,6 +20,7 @@ void Start()
 	InitInteractables();
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	int myFavoriteInt{ 7 };
+
 }
 
 void Draw()
@@ -1082,7 +1083,7 @@ void InitLevels(Level lvl,Room rooms[])
 	lvl.Rooms[++index] = FetchRoom("left_door_room");
 	lvl.Rooms[++index] = FetchRoom("horizontal_hallway");
 	lvl.Rooms[++index] = FetchRoom("right_door_room");
-	// no idea what this green squiggly line is warning us about °O°
+	// no idea what this green squiggly line is warning us about Â°OÂ°
 
 
 }
