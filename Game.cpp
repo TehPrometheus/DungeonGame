@@ -12,7 +12,7 @@ void Start()
 	// initialize game resources here
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
 	InitRooms(g_Rooms);
-	InitLevels(g_Levels, g_Rooms);
+	InitLevels(g_Level1, g_Rooms);
 	LoadRoomLayout(g_CellArr, "bottom_door_room.room");
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
@@ -282,14 +282,12 @@ void DeleteTextures()
 
 	// Delete textures stored in the levels array
 	// EXCEPTION IS THROWN WHEN j = 49, k = 70 (and for all values past this point)
-	for (int i = 0; i < g_LevelArrSize; i++)
+
+	for (int i = 0; i < g_RoomArrSize; i++)
 	{
-		for (int j = 0; j < g_RoomArrSize; j++)
+		for (int j = 0; j < g_GridSize; j++)
 		{
-			for (int k = 0; k < g_GridSize; k++)
-			{
-				DeleteTexture(g_Levels[i].Rooms[j].cells[k].texture);
-			}
+			DeleteTexture(g_Level1.Rooms[i].cells[j].texture);
 		}
 	}
 
@@ -1070,20 +1068,20 @@ void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize)
 
 #pragma region levelHandling
 // Level Handling
-void InitLevels(Level levels[],Room rooms[])
+void InitLevels(Level lvl,Room rooms[])
 {
 	// this function should fill the g_levels[0] with rooms
 	int level{ 0 };
 	int index{ 0 };
 
 
-	levels[level].Rooms[index] = FetchRoom("starting_room");
-	levels[level].Rooms[++index] = FetchRoom("vertical_hallway");
-	levels[level].Rooms[++index] = FetchRoom("leftright_door_room");
-	levels[level].Rooms[++index] = FetchRoom("horizontal_hallway"); 
-	levels[level].Rooms[++index] = FetchRoom("left_door_room");
-	levels[level].Rooms[++index] = FetchRoom("horizontal_hallway");
-	levels[level].Rooms[++index] = FetchRoom("right_door_room");
+	lvl.Rooms[index] = FetchRoom("starting_room");
+	lvl.Rooms[++index] = FetchRoom("vertical_hallway");
+	lvl.Rooms[++index] = FetchRoom("leftright_door_room");
+	lvl.Rooms[++index] = FetchRoom("horizontal_hallway");
+	lvl.Rooms[++index] = FetchRoom("left_door_room");
+	lvl.Rooms[++index] = FetchRoom("horizontal_hallway");
+	lvl.Rooms[++index] = FetchRoom("right_door_room");
 	// no idea what this green squiggly line is warning us about °O°
 
 
