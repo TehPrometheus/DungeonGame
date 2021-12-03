@@ -22,6 +22,7 @@ const int g_NrRoomsPerLevel{ 10 }; // Careful with this aswell
 const int g_RoomArrSize{ 100 }; 
 const int g_LevelArrSize{ 1 }; // lets try to make one level first, each level always has g_NrRoomsPerLevel rooms
 const int g_ItemInventorySize{ 5 };
+const int g_ItemsInGame{ 10 };
 const int g_WeaponInventorySize{ 3 };
 const int g_WeaponsInGame{ 10 };
 
@@ -41,6 +42,13 @@ enum class WeaponType
 enum class ItemType
 {
 	potion
+};
+
+enum class InteractableType
+{
+	weaponDrop,
+	itemDrop,
+	container
 };
 
 enum class Direction
@@ -69,6 +77,13 @@ struct Weapon
 	Texture texture{};
 	WeaponType type{};
 	float damageOutput{};
+};
+struct Interactable
+{
+	InteractableType type;
+	Weapon linkedWeapon;
+	Item linkedItem;
+	Rectf dstRect;
 };
 struct Player
 {
@@ -123,6 +138,8 @@ struct Level
 Room g_Rooms[g_RoomArrSize]{};
 Level g_Levels[g_LevelArrSize]{};
 Weapon g_Weapons[g_WeaponsInGame];
+Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame];
+Interactable g_InteractablesInRoom[10]; // For testing purposes
 Player g_Player{};
 Enemy g_EnemyArr[g_EnemyArrSize]{};
 Cell g_CellArr[g_GridSize]{};
@@ -188,6 +205,10 @@ void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
 Weapon FetchWeapon(const std::string& name);
 
+// Interactable Handling
+void InitInteractables();
+Interactable InitializeInteractable(const std::string& linkedItem, InteractableType type);
+
 // Enemy Handling
 int GetRandomSpawn(Cell cellArr[], const int cellArrSize);
 void DrawEnemies(Enemy enemyArr[], int arrSize);
@@ -195,13 +216,14 @@ void UpdateAnimationPos(float elapsedSec, Enemy& enemy);
 // Enemy Initialization Handling
 void InitEnemies(Enemy enemyArr[], const int enemyArrSize, Cell cellArr[], const int cellArrSize);
 Enemy InitializeEnemy(std::string enemyName);
-Enemy InitializeEnemy(EnemyType type, std::string textureName, float maxHealth, float damage, float timePerAction, int viewRange);
+Enemy InitializeEnemy(const EnemyType& type, const std::string& textureName, float maxHealth, float damage, float timePerAction, int viewRange);
 
 int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize);
 
 void DrawEnemyHealth(const Enemy& enemy);
 void DrawEnemyHealthBars(Enemy enemyArr[]);
 void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize);
+void DestroyEnemy(Enemy& enemy);
 
 // Enemy AI Handling
 void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);

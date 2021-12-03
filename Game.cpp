@@ -17,6 +17,7 @@ void Start()
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr);
+	InitInteractables();
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	std::cout << "hello Tanguy" << std::endl;
 	std::cout << "a change that I add at 10:05AM, 3rd Dec" << std::endl;
@@ -93,7 +94,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 #pragma region ownDefinitions
 // Define your own functions here
-
+#pragma region utilFunctions
 // Utils
 int GetIndex(const int rowIdx, const int colIdx, const int nrCols)
 {
@@ -155,21 +156,23 @@ void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex)
 {
 	player.dstRect = cellArr[dstIndex].dstRect;
 }
+#pragma endregion utilFunctions
 
+#pragma region textureHandling
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize)
 {
 	LoadTexturesFromFolder("resources", namedTextureArr, arrSize);
 
 	// Load numbers 0 through 95 for debug grid
-	/*for (int i = 0; i < numbersArrSize; i++)
+	/* for (int i = 0; i < numbersArrSize; i++)
 	{
 		bool success = TextureFromString(std::to_string(i), "resources/Font.otf", 13, g_White, textureNumbersArr[i]);
 		if (!success)
 		{
 			std::cout << "Loading number " + std::to_string(i) + " from Font.otf failed" << std::endl;
 		}
-	}*/
+	} */
 }
 void LoadTexturesFromFolder(std::string folderPath, NamedTexture namedTextureArr[], const int arrSize)
 {
@@ -248,6 +251,9 @@ void LoadTexture(const std::string texturePath, NamedTexture& namedTexture, std:
 	}
 }
 
+// SOMETHING IN THIS FUNCTION THROWS AN ERROR
+// SOMETHING IN THIS FUNCTION THROWS AN ERROR
+// SOMETHING IN THIS FUNCTION THROWS AN ERROR
 void DeleteTextures()
 {
 	// Delete player textures in player struct
@@ -278,6 +284,7 @@ void DeleteTextures()
 	}
 
 	// Delete textures stored in the levels array
+	// EXCEPTION IS THROWN WHEN j = 49, k = 70 (and for all values past this point)
 	for (int i = 0; i < g_LevelArrSize; i++)
 	{
 		for (int j = 0; j < g_RoomArrSize; j++)
@@ -285,7 +292,6 @@ void DeleteTextures()
 			for (int k = 0; k < g_GridSize; k++)
 			{
 				DeleteTexture(g_Levels[i].Rooms[j].cells[k].texture);
-
 			}
 		}
 	}
@@ -298,8 +304,6 @@ void DeleteTextures()
 			DeleteTexture(g_Rooms[i].cells[j].texture);
 		}
 	}
-
-
 }
 Texture FetchTexture(std::string textureName)
 {
@@ -319,8 +323,9 @@ std::string FetchTextureName(Texture texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
+#pragma endregion textureHandling
 
-
+#pragma region gridHandling
 // Grid Handling
 void InitGrid(Cell cellArr[], int nrRows, int nrCols)
 {
@@ -389,7 +394,9 @@ void SetObstacles(Cell cellArr[], int nrRows, int nrCols)
 
 
 }
+#pragma endregion gridHandling
 
+#pragma region playerHandling
 // Player Handling
 void InitPlayer(Player& player, Cell cellArr[])
 {
@@ -441,6 +448,11 @@ void DrawWeaponInventory(const Player& player)
 		SetColor(g_White);
 		DrawRect(location);
 		DrawTexture(player.weaponInventory[index].texture, location);
+		if (player.weaponInventory[index].texture.id == NULL)
+		{
+			SetColor(g_Grey);
+			FillRect(location);
+		}
 		if (player.selectedWeapon == index)
 		{
 			SetColor(g_Red);
@@ -512,7 +524,7 @@ void UseSword(const Player& player)
 }
 void CycleWeapons(Player& player)
 {
-	if (player.selectedWeapon < g_WeaponInventorySize)
+	if (player.selectedWeapon < g_WeaponInventorySize - 1)
 	{
 		++player.selectedWeapon;
 	}
@@ -541,7 +553,9 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 		}
 	}
 }
+#pragma endregion playerHandling
 
+#pragma region weaponHandling
 // Weapon Handling
 void InitWeapons()
 {
@@ -569,7 +583,30 @@ Weapon FetchWeapon(const std::string& name)
 	return no_weapon;
 
 }
+#pragma endregion weaponHandling
 
+#pragma region interactableHandling
+// Interactable Handling
+void InitInteractables() 
+{
+	InitializeInteractable("basic_sword", InteractableType::weaponDrop);
+}
+Interactable InitializeInteractable(const std::string& linkedItem, InteractableType type)
+{
+	Interactable initializedInteractable{};
+	initializedInteractable.type = type;
+	if (type == InteractableType::weaponDrop)
+	{
+		initializedInteractable.linkedWeapon = FetchWeapon(linkedItem);
+	}
+	else if (type == InteractableType::itemDrop)
+	{
+	}
+	return initializedInteractable;
+}
+#pragma endregion interactableHandling
+
+#pragma region enemyHandling
 // Enemy Handling
 int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
 {
@@ -583,11 +620,12 @@ int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
 }
 void InitEnemies(Enemy enemyArr[], const int enemyArrSize, Cell cellArr[], const int cellArrSize)
 {
-	enemyArr[0] = InitializeEnemy("bat");
+	int enemyNumber{};
+	enemyArr[enemyNumber] = InitializeEnemy("bat");
 
 
 
-	for (int index{}; index < g_EnemyArrSize; ++index)
+	for (int index{}; index < enemyNumber + 1; ++index)
 	{
 		enemyArr[index].dstRect = cellArr[GetRandomSpawn(cellArr, cellArrSize)].dstRect;
 		enemyArr[index].animationPos = enemyArr[index].dstRect;
@@ -602,7 +640,7 @@ void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize)
 	}
 }
 
-Enemy InitializeEnemy(EnemyType type, std::string textureName, float maxHealth, float damage, float timePerAction, int viewRange)
+Enemy InitializeEnemy(const EnemyType& type, const std::string& textureName, float maxHealth, float damage, float timePerAction, int viewRange)
 {
 	Enemy enemy{};
 	enemy.type = type;
@@ -633,9 +671,7 @@ void DrawEnemies(Enemy enemyArr[], int arrSize)
 {
 	for (int index{}; index < arrSize; ++index)
 	{
-		if (enemyArr[index].health > 0.f) {
-			DrawTexture(enemyArr[index].texture, enemyArr[index].animationPos);
-		}
+		DrawTexture(enemyArr[index].texture, enemyArr[index].animationPos);
 	}
 }
 void UpdateAnimationPos(float elapsedSec, Enemy& enemy)
@@ -678,6 +714,11 @@ void DrawEnemyHealthBars(Enemy enemyArr[])
 			DrawEnemyHealth(enemyArr[index]);
 		}
 	}
+}
+void DestroyEnemy(Enemy& enemy) 
+{
+	Enemy defaultEnemy{};
+	enemy = defaultEnemy;
 }
 
 int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize)
@@ -803,20 +844,24 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 {
 	for (int index{}; index < enemyArrSize; ++index)
 	{
-		if (enemyArr[index].health > 0.f) {
-			if (enemyArr[index].type == EnemyType::basic)
-			{
-				BasicEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
-			}
-			else if (enemyArr[index].type == EnemyType::ranged)
-			{
-				RangedEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
-			}
-			UpdateAnimationPos(elapsedSec, enemyArr[index]);
+		if (enemyArr[index].health <= 0.f && enemyArr[index].maxHealth != 0)
+		{ 
+			DestroyEnemy(enemyArr[index]);
+		} 
+		else if (enemyArr[index].type == EnemyType::basic)
+		{
+			BasicEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
 		}
+		else if (enemyArr[index].type == EnemyType::ranged)
+		{
+			RangedEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
+		}
+		UpdateAnimationPos(elapsedSec, enemyArr[index]);
 	}
 }
+#pragma endregion enemyHandling
 
+#pragma region inputHandling
 // Input Handling
 void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, float elapsedSec)
 {
@@ -901,8 +946,10 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 	else player.facing = Direction::left;
 	SwitchPlayer(player);
 }
+#pragma endregion inputHandling
 
-// Level save file handling
+#pragma region roomHandling
+// Room save file handling
 void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFileName)
 {
 	std::fstream file;
@@ -1022,8 +1069,9 @@ void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize)
 
 
 }
+#pragma endregion roomHandling
 
-
+#pragma region levelHandling
 // Level Handling
 void InitLevels(Level levels[],Room rooms[])
 {
@@ -1043,6 +1091,7 @@ void InitLevels(Level levels[],Room rooms[])
 
 
 }
+#pragma endregion levelHandling
 
 /*
 	CHANGES IN THIS LOCAL BUILD
