@@ -283,7 +283,7 @@ void DeleteTextures()
 	// Delete textures stored in the levels array
 	// EXCEPTION IS THROWN WHEN j = 49, k = 70 (and for all values past this point)
 
-	for (int i = 0; i < g_RoomArrSize; i++)
+	for (int i = 0; i < g_NrRoomsPerLevel; i++)
 	{
 		for (int j = 0; j < g_GridSize; j++)
 		{
