@@ -559,7 +559,7 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 // Weapon Handling
 void InitWeapons()
 {
-	g_Weapons[0] = InitializeWeapon("basic_sword", "enemy_zombie", WeaponType::sword, 2.0f);
+	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.0f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
