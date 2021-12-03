@@ -93,7 +93,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 #pragma region ownDefinitions
 // Define your own functions here
-
+#pragma region utilFunctions
 // Utils
 int GetIndex(const int rowIdx, const int colIdx, const int nrCols)
 {
@@ -155,21 +155,23 @@ void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex)
 {
 	player.dstRect = cellArr[dstIndex].dstRect;
 }
+#pragma endregion utilFunctions
 
+#pragma region textureHandling
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize)
 {
 	LoadTexturesFromFolder("resources", namedTextureArr, arrSize);
 
 	// Load numbers 0 through 95 for debug grid
-	/*for (int i = 0; i < numbersArrSize; i++)
+	/* for (int i = 0; i < numbersArrSize; i++)
 	{
 		bool success = TextureFromString(std::to_string(i), "resources/Font.otf", 13, g_White, textureNumbersArr[i]);
 		if (!success)
 		{
 			std::cout << "Loading number " + std::to_string(i) + " from Font.otf failed" << std::endl;
 		}
-	}*/
+	} */
 }
 void LoadTexturesFromFolder(std::string folderPath, NamedTexture namedTextureArr[], const int arrSize)
 {
@@ -281,6 +283,7 @@ void DeleteTextures()
 	}
 
 	// Delete textures stored in the levels array
+	// EXCEPTION IS THROWN WHEN j = 49, k = 70 (and for all values past this point)
 	for (int i = 0; i < g_LevelArrSize; i++)
 	{
 		for (int j = 0; j < g_RoomArrSize; j++)
@@ -300,8 +303,6 @@ void DeleteTextures()
 			DeleteTexture(g_Rooms[i].cells[j].texture);
 		}
 	}
-
-
 }
 Texture FetchTexture(std::string textureName)
 {
@@ -321,7 +322,9 @@ std::string FetchTextureName(Texture texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
+#pragma endregion textureHandling
 
+#pragma region gridHandling
 // Grid Handling
 void InitGrid(Cell cellArr[], int nrRows, int nrCols)
 {
@@ -390,7 +393,9 @@ void SetObstacles(Cell cellArr[], int nrRows, int nrCols)
 
 
 }
+#pragma endregion gridHandling
 
+#pragma region playerHandling
 // Player Handling
 void InitPlayer(Player& player, Cell cellArr[])
 {
@@ -542,7 +547,9 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 		}
 	}
 }
+#pragma endregion playerHandling
 
+#pragma region weaponHandling
 // Weapon Handling
 void InitWeapons()
 {
@@ -570,7 +577,9 @@ Weapon FetchWeapon(const std::string& name)
 	return no_weapon;
 
 }
+#pragma endregion weaponHandling
 
+#pragma region enemyHandling
 // Enemy Handling
 int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
 {
@@ -817,7 +826,9 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 		}
 	}
 }
+#pragma endregion enemyHandling
 
+#pragma region inputHandling
 // Input Handling
 void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, float elapsedSec)
 {
@@ -902,8 +913,10 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 	else player.facing = Direction::left;
 	SwitchPlayer(player);
 }
+#pragma endregion inputHandling
 
-// Level save file handling
+#pragma region roomHandling
+// Room save file handling
 void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFileName)
 {
 	std::fstream file;
@@ -1023,8 +1036,9 @@ void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize)
 
 
 }
+#pragma endregion roomHandling
 
-
+#pragma region levelHandling
 // Level Handling
 void InitLevels(Level levels[],Room rooms[])
 {
@@ -1044,6 +1058,7 @@ void InitLevels(Level levels[],Room rooms[])
 
 
 }
+#pragma endregion levelHandling
 
 /*
 	CHANGES IN THIS LOCAL BUILD
