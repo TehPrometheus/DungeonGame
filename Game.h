@@ -20,7 +20,6 @@ const int g_TexturesSize{ 100 }; // Careful, we do not know yet how many texture
 const int g_EnemyArrSize{ 12 };
 const int g_NrRoomsPerLevel{ 10 }; // Careful with this aswell
 const int g_RoomArrSize{ 100 }; 
-const int g_LevelArrSize{ 1 }; // lets try to make one level first, each level always has g_NrRoomsPerLevel rooms
 const int g_ItemInventorySize{ 5 };
 const int g_ItemsInGame{ 10 };
 const int g_WeaponInventorySize{ 3 };
@@ -131,12 +130,11 @@ struct Room
 struct Level
 {
 	Room Rooms[g_NrRoomsPerLevel]{};
-	std::string levelName;
 };
 
 
 Room g_Rooms[g_RoomArrSize]{};
-Level g_Levels[g_LevelArrSize]{};
+Level g_Level1{};
 Weapon g_Weapons[g_WeaponsInGame];
 Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame];
 Interactable g_InteractablesInRoom[10]; // For testing purposes
@@ -245,7 +243,7 @@ void InitRooms(Room rooms[]);
 Room FetchRoom(std::string roomName);
 
 // Level Handling
-void InitLevels(Level levels[], Room rooms[]);
+void InitLevels(Level lvl, Room rooms[]);
 
 
 #pragma endregion ownDeclarations
