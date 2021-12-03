@@ -248,6 +248,9 @@ void LoadTexture(const std::string texturePath, NamedTexture& namedTexture, std:
 	}
 }
 
+// SOMETHING IN THIS FUNCTION THROWS AN ERROR
+// SOMETHING IN THIS FUNCTION THROWS AN ERROR
+// SOMETHING IN THIS FUNCTION THROWS AN ERROR
 void DeleteTextures()
 {
 	// Delete player textures in player struct
@@ -285,7 +288,6 @@ void DeleteTextures()
 			for (int k = 0; k < g_GridSize; k++)
 			{
 				DeleteTexture(g_Levels[i].Rooms[j].cells[k].texture);
-
 			}
 		}
 	}
@@ -319,7 +321,6 @@ std::string FetchTextureName(Texture texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
-
 
 // Grid Handling
 void InitGrid(Cell cellArr[], int nrRows, int nrCols)
@@ -512,7 +513,7 @@ void UseSword(const Player& player)
 }
 void CycleWeapons(Player& player)
 {
-	if (player.selectedWeapon < g_WeaponInventorySize)
+	if (player.selectedWeapon < g_WeaponInventorySize - 1)
 	{
 		++player.selectedWeapon;
 	}
