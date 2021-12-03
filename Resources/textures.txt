@@ -29,6 +29,7 @@
 {basic_sword_right.png,basic_sword_right}
 {basic_sword_left.png,basic_sword_left}
 {knight_idle_anim.png,knight_idle_anim}
-{knight_run_anim.png,knight_run_anim}
+{knight_run_right_anim.png,knight_run_right_anim}
+{knight_run_left_anim.png,knight_run_left_anim}
 {knight_hit_anim.png,knight_hit_anim}
 {basic_sword_left.png,basic_sword_left}
