@@ -24,7 +24,7 @@ const int g_ItemInventorySize{ 5 };
 const int g_ItemsInGame{ 10 };
 const int g_WeaponInventorySize{ 3 };
 const int g_WeaponsInGame{ 10 };
-const int g_PlayerSpritesSize{ 2 };
+const int g_PlayerSpritesSize{ 3 };
 
 enum class EnemyType
 {
@@ -63,7 +63,8 @@ enum class Direction
 enum class AnimStates
 {
 	idle,
-	run,
+	runRight,
+	runLeft,
 	hit
 };
 
