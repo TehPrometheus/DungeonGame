@@ -19,7 +19,7 @@ void Start()
 	InitPlayer(g_Player, g_CellArr);
 	InitInteractables();
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
-	int myFavoriteInt{ 8 };
+	int myFavoriteInt{ 12 };
 }
 
 void Draw()
