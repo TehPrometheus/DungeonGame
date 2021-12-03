@@ -28,3 +28,4 @@
 {basic_sword_down.png,basic_sword_down}
 {basic_sword_right.png,basic_sword_right}
 {basic_sword_left.png,basic_sword_left}
+some random text
