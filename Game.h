@@ -237,6 +237,7 @@ void SetObstacles(Cell cellArr[], int nrRows, int nrCols); //sets all appropriat
 void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[]);
 void DrawPlayer(const Player& player, Sprite Sprites[]);
 void UpdateAnimationPos(float elapsedSec, Player& player);
+void TeleportPlayer(const int index, Player& player);
 
 void DrawWeaponInventory(const Player& player);
 void DrawHealthBar(Rectf entityRect, float health, float maxHealth);

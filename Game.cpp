@@ -522,6 +522,11 @@ void UpdateAnimationPos(float elapsedSec, Player& player)
 		player.animationPos.bottom = player.dstRect.bottom;
 	}
 }
+void TeleportPlayer(const int index, Player& player)
+{
+	player.dstRect = g_CellArr[index].dstRect;
+	player.animationPos = g_CellArr[index].dstRect;
+}
 
 void DrawWeaponInventory(const Player& player)
 {
@@ -1170,6 +1175,7 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				{
 					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
 					g_CurrentRoom = RoomStates::vertical_hallway_1;
+					TeleportPlayer(int(top.y), g_Player);
 				}
 				break;
 			}
@@ -1180,11 +1186,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				{
 					LoadRoomLayout(cellArr, "combat_room_1.room");
 					g_CurrentRoom = RoomStates::combat_room_1;
+					TeleportPlayer(int(top.y), g_Player);
 				}
 				else if (playerIndex == bottom.x)
 				{
 					LoadRoomLayout(cellArr, "starting_room.room");
 					g_CurrentRoom = RoomStates::starting_room;
+					TeleportPlayer(int(bottom.y), g_Player);
 				}
 				break;
 			}
