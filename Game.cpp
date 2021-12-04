@@ -23,13 +23,31 @@ void Draw()
 {
 	ClearBackground(0,0,0);
 
-	// Put your own draw statements here
-	DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
-	DrawEnemies(g_EnemyArr, g_EnemyArrSize);
-	DrawEnemyHealthBars(g_EnemyArr);
-	DrawPlayer(g_Player, g_PlayerSprites);
-	DrawWeaponInventory(g_Player);
-	DrawPlayerHealth(g_Player);
+
+
+	switch (g_Game)
+	{
+	case GameStates::startScreen:
+		DrawStartScreen();
+		
+		break;
+	case GameStates::playing:
+		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
+		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemyHealthBars(g_EnemyArr);
+		DrawPlayer(g_Player, g_PlayerSprites);
+		DrawWeaponInventory(g_Player);
+		DrawPlayerHealth(g_Player);
+		break;
+	case GameStates::gameOverScreen:
+		DrawEndScreen();
+		break;
+	case GameStates::restarting:
+		break;
+	default:
+		break;
+	}
+
 
 	//Comment this out to disable the debug grid
 	
@@ -44,7 +62,7 @@ void Update(float elapsedSec)
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
 	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
-
+	SetGameOverScreen(g_Player);
 }
 
 void End()
@@ -102,6 +120,7 @@ void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 	switch (e.button)
 	{
 	case (SDL_BUTTON_LEFT):
+		ClickStart(e);
 		UseWeapon(g_Player);
 		break;
 	}
@@ -189,6 +208,16 @@ void TeleportPlayer(const int index, Player& player)
 {
 	player.dstRect = g_CellArr[index].dstRect;
 	player.animationPos = g_CellArr[index].dstRect;
+}
+bool IsPointInRect(const Rectf& rectangle, const Point2f& point)
+{
+	return (point.x >= rectangle.left &&
+		point.x <= rectangle.left + rectangle.width &&
+		point.y >= rectangle.bottom &&
+		point.y <= rectangle.bottom + rectangle.height);
+
+	return false;
+
 }
 #pragma endregion utilFunctions
 
@@ -339,15 +368,6 @@ std::string FetchTextureName(const Texture& texture)
 			return g_NamedTexturesArr[index].name;
 	}
 	return g_NamedTexturesArr[0].name;
-}
-Room FetchRoom(const std::string& roomName)
-{
-	Room tempRoom{};
-
-	LoadRoomLayout(tempRoom.cells, roomName);
-
-	return tempRoom;
-
 }
 
 #pragma endregion textureHandling
@@ -1173,10 +1193,9 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 			{
 				if (playerIndex == top.x)
 				{
-					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
 					TeleportPlayer(int(top.y), player);
 					g_CurrentRoom = RoomStates::vertical_hallway_1;
-					TeleportPlayer(int(top.y), g_Player);
+					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
 				}
 				break;
 			}
@@ -1416,6 +1435,7 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 			}
 
 		}
+
 }
 
 
@@ -1575,5 +1595,50 @@ void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
 	}
 }
 #pragma endregion spriteHandling
+
+#pragma region gameHandling
+void DrawStartScreen()
+{
+	Texture startingScreen{ FetchTexture("starting_screen") };
+	Rectf dstRect{};
+	dstRect.width = g_WindowWidth;
+	dstRect.height = g_WindowHeight;
+	dstRect.left = 0;
+	dstRect.bottom = 0;
+
+	DrawTexture(startingScreen, dstRect);
+}
+void DrawEndScreen()
+{
+	Texture endScreen{ FetchTexture("end_screen") };
+	Rectf dstRect{};
+	dstRect.width = g_WindowWidth;
+	dstRect.height = g_WindowHeight;
+	dstRect.left = 0;
+	dstRect.bottom = 0;
+
+	DrawTexture(endScreen, dstRect);
+}
+void ClickStart(const SDL_MouseButtonEvent& e)
+{
+	if (g_Game == GameStates::startScreen)
+	{
+		Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
+		Rectf startButton{ 516.f,63.f, 246.f,81.f };
+
+		if (IsPointInRect(startButton, mousePos))
+		{
+			g_Game = GameStates::playing;
+		}
+	}
+}
+void SetGameOverScreen(Player& player)
+{
+	if (player.health <= 0.f)
+	{
+		g_Game = GameStates::gameOverScreen;
+	}
+}
+#pragma endregion gameHandling
 
 #pragma endregion ownDefinitions
