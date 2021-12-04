@@ -410,29 +410,35 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 }
 void DrawPlayer(const Player& player, Sprite Sprites[])
 {
-	int idle{ 0 };
-	int run{ 1 };
-
 	Rectf srcRect{};
 
 	switch (player.animState)
 	{
 	case AnimStates::idle:
-		srcRect.width = Sprites[idle].texture.width / Sprites[idle].cols;
-		srcRect.height = Sprites[idle].texture.height;
-		srcRect.left = Sprites[idle].currentFrame * srcRect.width;
+		srcRect.width = Sprites[int(AnimStates::idle)].texture.width / Sprites[int(AnimStates::idle)].cols;
+		srcRect.height = Sprites[int(AnimStates::idle)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::idle)].currentFrame * srcRect.width;
 		srcRect.bottom = srcRect.height;
 		break;
-	case AnimStates::run:
-		srcRect.width = Sprites[run].texture.width / Sprites[run].cols;
-		srcRect.height = Sprites[run].texture.height;
-		srcRect.left = Sprites[run].currentFrame * srcRect.width;
+	case AnimStates::runRight:
+		srcRect.width = Sprites[int(AnimStates::runRight)].texture.width / Sprites[int(AnimStates::runRight)].cols;
+		srcRect.height = Sprites[int(AnimStates::runRight)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::runRight)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::runLeft:
+		srcRect.width = Sprites[int(AnimStates::runLeft)].texture.width / Sprites[int(AnimStates::runLeft)].cols;
+		srcRect.height = Sprites[int(AnimStates::runLeft)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::runLeft)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::hit:
+		srcRect.width = Sprites[int(AnimStates::hit)].texture.width;
+		srcRect.height = Sprites[int(AnimStates::hit)].texture.height;
+		srcRect.left = 0;
 		srcRect.bottom = srcRect.height;
 		break;
 	}
-
-
-
 	DrawTexture(player.sprite.texture, player.animationPos, srcRect);
 
 }
@@ -815,11 +821,15 @@ void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSiz
 		else if (isNextToPlayerX 
 			&&   g_Player.health > 0.f)
 		{
+			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
+			g_Player.animState = AnimStates::hit;
 			g_Player.health -= enemy.damageOutput;
 			enemy.animationPos.left -= (enemy.animationPos.left - g_Player.dstRect.left) / 2;
 		}
 		else if (isNextToPlayerY && g_Player.health > 0.f)
 		{
+			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
+			g_Player.animState = AnimStates::hit;
 			g_Player.health -= enemy.damageOutput;
 			enemy.animationPos.bottom -= (enemy.animationPos.bottom - g_Player.dstRect.bottom) / 2;
 		}
@@ -972,10 +982,16 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 }
 void ProcessRunAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
 {
-	if (key == SDLK_q || key == SDLK_z || key == SDLK_s || key == SDLK_d)
+	if (key == SDLK_z || key == SDLK_d)
 	{
-		player.sprite.texture = Sprites[int(AnimStates::run)].texture;
-		player.animState = AnimStates::run;
+		player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
+		player.animState = AnimStates::runRight;
+	}
+
+	if (key == SDLK_q || key == SDLK_s)
+	{
+		player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
+		player.animState = AnimStates::runLeft;
 	}
 }
 void ProcessIdleAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
@@ -1139,50 +1155,66 @@ void InitLevels(Level lvl,Room rooms[])
 #pragma region spriteHandling
 void InitPlayerSprites(Sprite Sprites[])
 {
-	int idle{ 0 };
-	int run{ 1 };
-
 	// initialize idle anim
-	Sprites[idle].texture = FetchTexture("knight_idle_anim");
-	Sprites[idle].cols = 4;
-	Sprites[idle].frames = 4;
-	Sprites[idle].currentFrame = 0;
-	Sprites[idle].accumulatedTime = 0.0f;
-	Sprites[idle].frameTime = 1 / 8.0f;
+	Sprites[int(AnimStates::idle)].texture = FetchTexture("knight_idle_anim");
+	Sprites[int(AnimStates::idle)].cols = 4;
+	Sprites[int(AnimStates::idle)].frames = 4;
+	Sprites[int(AnimStates::idle)].currentFrame = 0;
+	Sprites[int(AnimStates::idle)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idle)].frameTime = 1 / 8.0f;
 
-	// initialize run anim
-	Sprites[run].texture = FetchTexture("knight_run_anim");
-	Sprites[run].cols = 4;
-	Sprites[run].frames = 4;
-	Sprites[run].currentFrame = 0;
-	Sprites[run].accumulatedTime = 0.0f;
-	Sprites[run].frameTime = 1 / 15.0f;
+	// initialize run right anim
+	Sprites[int(AnimStates::runRight)].texture = FetchTexture("knight_run_right_anim");
+	Sprites[int(AnimStates::runRight)].cols = 4;
+	Sprites[int(AnimStates::runRight)].frames = 4;
+	Sprites[int(AnimStates::runRight)].currentFrame = 0;
+	Sprites[int(AnimStates::runRight)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runRight)].frameTime = 1 / 15.0f;
 
+	// initialize run left anim
+	Sprites[int(AnimStates::runLeft)].texture = FetchTexture("knight_run_left_anim");
+	Sprites[int(AnimStates::runLeft)].cols = 4;
+	Sprites[int(AnimStates::runLeft)].frames = 4;
+	Sprites[int(AnimStates::runLeft)].currentFrame = 0;
+	Sprites[int(AnimStates::runLeft)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runLeft)].frameTime = 1 / 15.0f;
 
+	// initialize hit anim
+	Sprites[int(AnimStates::hit)].texture = FetchTexture("knight_hit_anim");
+	Sprites[int(AnimStates::hit)].cols = 1;
+	Sprites[int(AnimStates::hit)].frames = 1;
+	Sprites[int(AnimStates::hit)].currentFrame = 0;
+	Sprites[int(AnimStates::hit)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::hit)].frameTime = 1 / 1.0f;
 
 
 }
 void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
 {
-	int idle{ 0 };
-	int run{ 1 };
-
 	switch (g_Player.animState)
 	{
 	case AnimStates::idle:
-		Sprites[idle].accumulatedTime += elapsedSec;
-		if (Sprites[idle].accumulatedTime > Sprites[idle].frameTime)
+		Sprites[int(AnimStates::idle)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idle)].accumulatedTime > Sprites[int(AnimStates::idle)].frameTime)
 		{
-			++Sprites[idle].currentFrame %= Sprites[idle].frames;
-			Sprites[idle].accumulatedTime -= Sprites[idle].frameTime;
+			++Sprites[int(AnimStates::idle)].currentFrame %= Sprites[int(AnimStates::idle)].frames;
+			Sprites[int(AnimStates::idle)].accumulatedTime -= Sprites[int(AnimStates::idle)].frameTime;
 		}
 		break;
-	case AnimStates::run:
-		Sprites[run].accumulatedTime += elapsedSec;
-		if (Sprites[run].accumulatedTime > Sprites[run].frameTime)
+	case AnimStates::runRight:
+		Sprites[int(AnimStates::runRight)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runRight)].accumulatedTime > Sprites[int(AnimStates::runRight)].frameTime)
 		{
-			++Sprites[run].currentFrame %= Sprites[run].frames;
-			Sprites[run].accumulatedTime -= Sprites[run].frameTime;
+			++Sprites[int(AnimStates::runRight)].currentFrame %= Sprites[int(AnimStates::runRight)].frames;
+			Sprites[int(AnimStates::runRight)].accumulatedTime -= Sprites[int(AnimStates::runRight)].frameTime;
+		}
+		break;
+	case AnimStates::runLeft:
+		Sprites[int(AnimStates::runLeft)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runLeft)].accumulatedTime > Sprites[int(AnimStates::runLeft)].frameTime)
+		{
+			++Sprites[int(AnimStates::runLeft)].currentFrame %= Sprites[int(AnimStates::runLeft)].frames;
+			Sprites[int(AnimStates::runLeft)].accumulatedTime -= Sprites[int(AnimStates::runLeft)].frameTime;
 		}
 		break;
 	}
