@@ -43,6 +43,7 @@ void Update(float elapsedSec)
 	UpdateAnimationPos(elapsedSec, g_Player);
 	UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
+	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
 }
 
@@ -57,12 +58,16 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-	ProcessRunAnimState(g_Player, g_PlayerSprites, key);
+	switch (key)
+	{
+	case SDLK_TAB:
+		CycleWeapons(g_Player);
+		break;
+	}
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
-	ProcessIdleAnimState(g_Player, g_PlayerSprites, key);
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
@@ -401,7 +406,7 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 
 	InitPlayerSprites(Sprites);
 	player.sprite.texture = Sprites[idle].texture;
-	player.animState = AnimStates::idle;
+	player.animState = AnimStates::idleRight;
 	player.dstRect = cellArr[40].dstRect; // 40 just a random location chosen for testing purposes
 	player.animationPos = player.dstRect;
 	player.health = player.maxHealth;
@@ -414,16 +419,46 @@ void DrawPlayer(const Player& player, Sprite Sprites[])
 
 	switch (player.animState)
 	{
-	case AnimStates::idle:
-		srcRect.width = Sprites[int(AnimStates::idle)].texture.width / Sprites[int(AnimStates::idle)].cols;
-		srcRect.height = Sprites[int(AnimStates::idle)].texture.height;
-		srcRect.left = Sprites[int(AnimStates::idle)].currentFrame * srcRect.width;
+	case AnimStates::idleRight:
+		srcRect.width = Sprites[int(AnimStates::idleRight)].texture.width / Sprites[int(AnimStates::idleRight)].cols;
+		srcRect.height = Sprites[int(AnimStates::idleRight)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::idleRight)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::idleLeft:
+		srcRect.width = Sprites[int(AnimStates::idleLeft)].texture.width / Sprites[int(AnimStates::idleLeft)].cols;
+		srcRect.height = Sprites[int(AnimStates::idleLeft)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::idleLeft)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::idleDown:
+		srcRect.width = Sprites[int(AnimStates::idleDown)].texture.width / Sprites[int(AnimStates::idleDown)].cols;
+		srcRect.height = Sprites[int(AnimStates::idleDown)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::idleDown)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::idleUp:
+		srcRect.width = Sprites[int(AnimStates::idleUp)].texture.width / Sprites[int(AnimStates::idleUp)].cols;
+		srcRect.height = Sprites[int(AnimStates::idleUp)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::idleUp)].currentFrame * srcRect.width;
 		srcRect.bottom = srcRect.height;
 		break;
 	case AnimStates::runRight:
 		srcRect.width = Sprites[int(AnimStates::runRight)].texture.width / Sprites[int(AnimStates::runRight)].cols;
 		srcRect.height = Sprites[int(AnimStates::runRight)].texture.height;
 		srcRect.left = Sprites[int(AnimStates::runRight)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::runDown:
+		srcRect.width = Sprites[int(AnimStates::runDown)].texture.width / Sprites[int(AnimStates::runDown)].cols;
+		srcRect.height = Sprites[int(AnimStates::runDown)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::runDown)].currentFrame * srcRect.width;
+		srcRect.bottom = srcRect.height;
+		break;
+	case AnimStates::runUp:
+		srcRect.width = Sprites[int(AnimStates::runUp)].texture.width / Sprites[int(AnimStates::runUp)].cols;
+		srcRect.height = Sprites[int(AnimStates::runUp)].texture.height;
+		srcRect.left = Sprites[int(AnimStates::runUp)].currentFrame * srcRect.width;
 		srcRect.bottom = srcRect.height;
 		break;
 	case AnimStates::runLeft:
@@ -944,7 +979,7 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		}
 	}
 }
-void SwitchPlayer(Player& player)
+/* void SwitchPlayer(Player& player)
 {
 	Texture playerRight = FetchTexture("player_right");
 	Texture playerLeft = FetchTexture("player_left");
@@ -955,7 +990,7 @@ void SwitchPlayer(Player& player)
 	if (player.facing == Direction::up) player.sprite.texture = playerUp;
 	if (player.facing == Direction::left) player.sprite.texture = playerLeft;
 	if (player.facing == Direction::down) player.sprite.texture = playerDown;
-}
+}*/
 void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 {
 	Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
@@ -978,30 +1013,54 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 		player.facing = Direction::down;
 	}
 	else player.facing = Direction::left;
-	//SwitchPlayer(player);
 }
-void ProcessRunAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
+void ProcessAnimState(Player& player, Sprite Sprites[])
 {
-	if (key == SDLK_z || key == SDLK_d)
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+	if (pStates[SDL_SCANCODE_S] || pStates[SDL_SCANCODE_Q] || pStates[SDL_SCANCODE_W] || pStates[SDL_SCANCODE_D])
 	{
-		player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
-		player.animState = AnimStates::runRight;
+		switch (player.facing) {
+		case Direction::right:
+			player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
+			player.animState = AnimStates::runRight;
+			break;
+		case Direction::left:
+			player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
+			player.animState = AnimStates::runLeft;
+			break;
+		case Direction::up:
+			player.sprite.texture = Sprites[int(AnimStates::runUp)].texture;
+			player.animState = AnimStates::runUp;
+			break;
+		case Direction::down:
+			player.sprite.texture = Sprites[int(AnimStates::runDown)].texture;
+			player.animState = AnimStates::runDown;
+			break;
+		}
 	}
+	else
+	{
+		switch (player.facing) {
+		case Direction::right:
+			player.sprite.texture = Sprites[int(AnimStates::idleRight)].texture;
+			player.animState = AnimStates::idleRight;
+			break;
+		case Direction::left:
+			player.sprite.texture = Sprites[int(AnimStates::idleLeft)].texture;
+			player.animState = AnimStates::idleLeft;
+			break;
+		case Direction::up:
+			player.sprite.texture = Sprites[int(AnimStates::idleUp)].texture;
+			player.animState = AnimStates::idleUp;
+			break;
+		case Direction::down:
+			player.sprite.texture = Sprites[int(AnimStates::idleDown)].texture;
+			player.animState = AnimStates::idleDown;
+			break;
+		}
+	}
+}
 
-	if (key == SDLK_q || key == SDLK_s)
-	{
-		player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
-		player.animState = AnimStates::runLeft;
-	}
-}
-void ProcessIdleAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
-{
-	if (key == SDLK_q || key == SDLK_z || key == SDLK_s || key == SDLK_d)
-	{
-		player.sprite.texture = Sprites[int(AnimStates::idle)].texture;
-		player.animState = AnimStates::idle;
-	}
-}
 #pragma endregion inputHandling
 
 #pragma region roomHandling
@@ -1155,13 +1214,37 @@ void InitLevels(Level lvl,Room rooms[])
 #pragma region spriteHandling
 void InitPlayerSprites(Sprite Sprites[])
 {
-	// initialize idle anim
-	Sprites[int(AnimStates::idle)].texture = FetchTexture("knight_idle_anim");
-	Sprites[int(AnimStates::idle)].cols = 4;
-	Sprites[int(AnimStates::idle)].frames = 4;
-	Sprites[int(AnimStates::idle)].currentFrame = 0;
-	Sprites[int(AnimStates::idle)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::idle)].frameTime = 1 / 8.0f;
+	// initialize idle right anim
+	Sprites[int(AnimStates::idleRight)].texture = FetchTexture("knight_idle_anim_right");
+	Sprites[int(AnimStates::idleRight)].cols = 4;
+	Sprites[int(AnimStates::idleRight)].frames = 4;
+	Sprites[int(AnimStates::idleRight)].currentFrame = 0;
+	Sprites[int(AnimStates::idleRight)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleRight)].frameTime = 1 / 8.0f;	
+
+	// initialize idle right anim
+	Sprites[int(AnimStates::idleLeft)].texture = FetchTexture("knight_idle_anim_left");
+	Sprites[int(AnimStates::idleLeft)].cols = 4;
+	Sprites[int(AnimStates::idleLeft)].frames = 4;
+	Sprites[int(AnimStates::idleLeft)].currentFrame = 0;
+	Sprites[int(AnimStates::idleLeft)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleLeft)].frameTime = 1 / 8.0f;
+
+	// initialize idle right anim
+	Sprites[int(AnimStates::idleUp)].texture = FetchTexture("knight_idle_anim_up");
+	Sprites[int(AnimStates::idleUp)].cols = 4;
+	Sprites[int(AnimStates::idleUp)].frames = 4;
+	Sprites[int(AnimStates::idleUp)].currentFrame = 0;
+	Sprites[int(AnimStates::idleUp)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleUp)].frameTime = 1 / 8.0f;
+
+	// initialize idle right anim
+	Sprites[int(AnimStates::idleDown)].texture = FetchTexture("knight_idle_anim_down");
+	Sprites[int(AnimStates::idleDown)].cols = 4;
+	Sprites[int(AnimStates::idleDown)].frames = 4;
+	Sprites[int(AnimStates::idleDown)].currentFrame = 0;
+	Sprites[int(AnimStates::idleDown)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleDown)].frameTime = 1 / 8.0f;
 
 	// initialize run right anim
 	Sprites[int(AnimStates::runRight)].texture = FetchTexture("knight_run_right_anim");
@@ -1170,6 +1253,22 @@ void InitPlayerSprites(Sprite Sprites[])
 	Sprites[int(AnimStates::runRight)].currentFrame = 0;
 	Sprites[int(AnimStates::runRight)].accumulatedTime = 0.0f;
 	Sprites[int(AnimStates::runRight)].frameTime = 1 / 15.0f;
+
+	// initialize run down anim
+	Sprites[int(AnimStates::runDown)].texture = FetchTexture("knight_run_down_anim");
+	Sprites[int(AnimStates::runDown)].cols = 4;
+	Sprites[int(AnimStates::runDown)].frames = 4;
+	Sprites[int(AnimStates::runDown)].currentFrame = 0;
+	Sprites[int(AnimStates::runDown)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runDown)].frameTime = 1 / 15.0f;
+
+	// initialize run up anim
+	Sprites[int(AnimStates::runUp)].texture = FetchTexture("knight_run_up_anim");
+	Sprites[int(AnimStates::runUp)].cols = 4;
+	Sprites[int(AnimStates::runUp)].frames = 4;
+	Sprites[int(AnimStates::runUp)].currentFrame = 0;
+	Sprites[int(AnimStates::runUp)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runUp)].frameTime = 1 / 15.0f;
 
 	// initialize run left anim
 	Sprites[int(AnimStates::runLeft)].texture = FetchTexture("knight_run_left_anim");
@@ -1193,12 +1292,36 @@ void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
 {
 	switch (g_Player.animState)
 	{
-	case AnimStates::idle:
-		Sprites[int(AnimStates::idle)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::idle)].accumulatedTime > Sprites[int(AnimStates::idle)].frameTime)
+	case AnimStates::idleRight:
+		Sprites[int(AnimStates::idleRight)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleRight)].accumulatedTime > Sprites[int(AnimStates::idleRight)].frameTime)
 		{
-			++Sprites[int(AnimStates::idle)].currentFrame %= Sprites[int(AnimStates::idle)].frames;
-			Sprites[int(AnimStates::idle)].accumulatedTime -= Sprites[int(AnimStates::idle)].frameTime;
+			++Sprites[int(AnimStates::idleRight)].currentFrame %= Sprites[int(AnimStates::idleRight)].frames;
+			Sprites[int(AnimStates::idleRight)].accumulatedTime -= Sprites[int(AnimStates::idleRight)].frameTime;
+		}
+		break;
+	case AnimStates::idleUp:
+		Sprites[int(AnimStates::idleUp)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleUp)].accumulatedTime > Sprites[int(AnimStates::idleUp)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleUp)].currentFrame %= Sprites[int(AnimStates::idleUp)].frames;
+			Sprites[int(AnimStates::idleUp)].accumulatedTime -= Sprites[int(AnimStates::idleUp)].frameTime;
+		}
+		break;
+	case AnimStates::idleLeft:
+		Sprites[int(AnimStates::idleLeft)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleLeft)].accumulatedTime > Sprites[int(AnimStates::idleLeft)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleLeft)].currentFrame %= Sprites[int(AnimStates::idleLeft)].frames;
+			Sprites[int(AnimStates::idleLeft)].accumulatedTime -= Sprites[int(AnimStates::idleLeft)].frameTime;
+		}
+		break;
+	case AnimStates::idleDown:
+		Sprites[int(AnimStates::idleDown)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleDown)].accumulatedTime > Sprites[int(AnimStates::idleDown)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleDown)].currentFrame %= Sprites[int(AnimStates::idleDown)].frames;
+			Sprites[int(AnimStates::idleDown)].accumulatedTime -= Sprites[int(AnimStates::idleDown)].frameTime;
 		}
 		break;
 	case AnimStates::runRight:
@@ -1215,6 +1338,22 @@ void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
 		{
 			++Sprites[int(AnimStates::runLeft)].currentFrame %= Sprites[int(AnimStates::runLeft)].frames;
 			Sprites[int(AnimStates::runLeft)].accumulatedTime -= Sprites[int(AnimStates::runLeft)].frameTime;
+		}
+		break;
+	case AnimStates::runDown:
+		Sprites[int(AnimStates::runDown)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runDown)].accumulatedTime > Sprites[int(AnimStates::runDown)].frameTime)
+		{
+			++Sprites[int(AnimStates::runDown)].currentFrame %= Sprites[int(AnimStates::runDown)].frames;
+			Sprites[int(AnimStates::runDown)].accumulatedTime -= Sprites[int(AnimStates::runDown)].frameTime;
+		}
+		break;
+	case AnimStates::runUp:
+		Sprites[int(AnimStates::runUp)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runUp)].accumulatedTime > Sprites[int(AnimStates::runUp)].frameTime)
+		{
+			++Sprites[int(AnimStates::runUp)].currentFrame %= Sprites[int(AnimStates::runUp)].frames;
+			Sprites[int(AnimStates::runUp)].accumulatedTime -= Sprites[int(AnimStates::runUp)].frameTime;
 		}
 		break;
 	}
