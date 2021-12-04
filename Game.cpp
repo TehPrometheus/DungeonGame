@@ -93,18 +93,10 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_o: 
 		{
 			// opens all doors. Remove when room clearing is implemented
-			Point2f top{ 6 , 97 };
-			Point2f left{ 52 , 63 };
-			Point2f right{ 64 , 53 };
-			Point2f bottom{ 110 , 19 };
+		OpenDoors(g_CellArr, g_GridSize);
 
-			g_CellArr[int(top.x)].isObstacle = false;
-			g_CellArr[int(left.x)].isObstacle = false;
-			g_CellArr[int(right.x)].isObstacle = false;
-			g_CellArr[int(bottom.x)].isObstacle = false;
-
-			std::cerr << "ALL DOOR TEXTURES ARE NOW SET TO OPEN" << std::endl;
-			break;
+		std::cerr << "ALL DOOR TEXTURES ARE NOW SET TO OPEN" << std::endl;
+		break;
 		}
 	}
 }
@@ -1273,8 +1265,8 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = "horizontal_hallway_4";
 
-	LoadRoom(level[0]);
 	g_CurrentRoom = level[0];
+	LoadRoom(level[0]);
 }
 
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
@@ -1329,6 +1321,22 @@ void LoadRoom(const Room& roomToLoad)
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
+}
+void OpenDoors(Cell cellArr[], int size)
+{
+	for (int i{}; i < size; ++i)
+	{
+		if (cellArr[i].texture.id == FetchTexture("door_closed").id)
+		{
+			cellArr[i].texture = FetchTexture("door_open");
+			cellArr[i].isObstacle = false;
+		}
+		else if (cellArr[i].texture.id == FetchTexture("door_transparent_closed").id)
+		{
+			cellArr[i].texture = FetchTexture("door_transparent_open");
+			cellArr[i].isObstacle = false;
+		}
+	}
 }
 
 #pragma endregion roomHandling
