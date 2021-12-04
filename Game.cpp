@@ -1329,66 +1329,7 @@ void LoadRoom(const Room& roomToLoad)
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
-					LoadRoomLayout(cellArr, "horizontal_hallway_3.room");
-					TeleportPlayer(int(right.y), player);
-					g_CurrentRoom = RoomStates::horizontal_hallway_3;
-				}
-				else if (playerIndex == bottom.x)
-				{
-					LoadRoomLayout(cellArr, "vertical_hallway_3.room");
-					TeleportPlayer(int(bottom.y), player);
-					g_CurrentRoom = RoomStates::vertical_hallway_3;
-				}
-				break;
-			}
-
-		case RoomStates::pickup_room_1:
-			{
-				if (playerIndex == left.x)
-				{
-					LoadRoomLayout(cellArr, "horizontal_hallway_2.room");
-					TeleportPlayer(int(left.y), player);
-					g_CurrentRoom = RoomStates::horizontal_hallway_2;
-				}
-				break;
-			}
-
-		case RoomStates::pickup_room_2:
-			{
-				if (playerIndex == bottom.x)
-				{
-					LoadRoomLayout(cellArr, "vertical_hallway_2.room");
-					TeleportPlayer(int(bottom.y), player);
-					g_CurrentRoom = RoomStates::vertical_hallway_2;
-				}
-				break;
-			}
-
-		case RoomStates::pickup_room_3:
-			{
-			if (playerIndex == top.x)
-			{
-				LoadRoomLayout(cellArr, "vertical_hallway_3.room");
-				TeleportPlayer(int(top.y), player);
-				g_CurrentRoom = RoomStates::vertical_hallway_3;
-			}
-			break;
-		}
-
-		case RoomStates::boss_room:
-			{
-				if (playerIndex == right.x)
-				{
-					LoadRoomLayout(cellArr, "horizontal_hallway_4.room");
-					TeleportPlayer(int(right.y), player);
-					g_CurrentRoom = RoomStates::horizontal_hallway_4;
-				}
-				break;
-			}
-
-		}
 }
-
 
 #pragma endregion roomHandling
 
