@@ -13,7 +13,7 @@ void Start()
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
 	InitRooms(g_Rooms);
 	InitLevels(g_Level1, g_Rooms);
-	LoadRoomLayout(g_CellArr, "bottom_door_room.room");
+	LoadRoomLayout(g_CellArr, "vertical_hallway.room");
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
