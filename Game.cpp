@@ -58,6 +58,12 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
+	switch (key)
+	{
+	case SDLK_TAB:
+		CycleWeapons(g_Player);
+		break;
+	}
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
