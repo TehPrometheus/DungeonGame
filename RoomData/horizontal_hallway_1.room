@@ -50,7 +50,7 @@
 {floor0}
 {floor1}
 {wall_hor2}
-{door_open}
+{door_closed}
 {floor0}
 {floor3}
 {floor0}
@@ -62,7 +62,7 @@
 {floor0}
 {floor0}
 {floor0}
-{door_open}
+{door_closed}
 {wall_corner_top_right}
 {floor0}
 {floor0}
