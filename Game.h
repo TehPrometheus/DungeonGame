@@ -13,19 +13,20 @@ float g_WindowHeight{ 720 };
 
 #pragma region ownDeclarations
 // Declare your own global variables here
-const int g_NrRows{ 9 };
-const int g_NrCols{ 13 };
-const int g_GridSize{ g_NrRows * g_NrCols };
-const int g_TexturesSize{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
-const int g_EnemyArrSize{ 12 };
-const int g_NrRoomsPerLevel{ 10 }; // Careful with this aswell
-const int g_RoomArrSize{ 10 }; 
-const int g_ItemInventorySize{ 5 };
-const int g_ItemsInGame{ 10 };
-const int g_WeaponInventorySize{ 3 };
-const int g_WeaponsInGame{ 10 };
-const int g_PlayerSpritesSize{ 20 };
+const int g_NrRows				{ 9 };
+const int g_NrCols				{ 13 };
+const int g_GridSize			{ g_NrRows * g_NrCols };
+const int g_TexturesSize		{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
+const int g_EnemyArrSize		{ 12 };
+const int g_NrRoomsPerLevel		{ 10 }; // Careful with this aswell
+const int g_RoomArrSize			{ 10 }; 
+const int g_ItemInventorySize	{ 5 };
+const int g_ItemsInGame			{ 10 };
+const int g_WeaponInventorySize	{ 3 };
+const int g_WeaponsInGame		{ 10 };
+const int g_PlayerSpritesSize	{ 20 };
 
+// enums
 enum class RoomStates
 {
 	starting_room,
@@ -42,12 +43,8 @@ enum class RoomStates
 	pickup_room_1,
 	pickup_room_2,
 	pickup_room_3,
-	boss_room,
-
+	boss_room
 };
-
-RoomStates g_CurrentRoom{ RoomStates::starting_room };
-
 enum class EnemyType
 {
 	basic,
@@ -55,24 +52,20 @@ enum class EnemyType
 	ranged,
 	boss
 };
-
 enum class WeaponType 
 {
 	sword
 };
-
 enum class ItemType
 {
 	potion
 };
-
 enum class InteractableType
 {
 	weaponDrop,
 	itemDrop,
 	container
 };
-
 enum class Direction
 {
 	up,
@@ -81,7 +74,6 @@ enum class Direction
 	right,
 	none
 };
-
 enum class AnimStates
 {
 	idleRight,
@@ -95,6 +87,7 @@ enum class AnimStates
 	hit
 };
 
+// structs
 struct Cell
 {
 	Rectf dstRect;
@@ -120,7 +113,6 @@ struct Interactable
 	Item linkedItem;
 	Rectf dstRect;
 };
-
 struct Sprite
 {
 	Texture texture;
@@ -130,7 +122,6 @@ struct Sprite
 	int currentFrame;
 	float accumulatedTime;
 };
-
 struct Player
 {
 	Rectf dstRect;
@@ -181,12 +172,12 @@ struct Level
 };
 
 
-
-Weapon g_Weapons[g_WeaponsInGame];
-Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame];
-Interactable g_InteractablesInRoom[10]; // For testing purposes
-Player g_Player{};
+RoomStates g_CurrentRoom{ RoomStates::starting_room };
+Weapon g_Weapons[g_WeaponsInGame]{};
+Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame]{};
+Interactable g_InteractablesInRoom[10]{}; // For testing purposes
 Enemy g_EnemyArr[g_EnemyArrSize]{};
+Player g_Player{};
 Cell g_CellArr[g_GridSize]{};
 Texture g_Numbers[g_GridSize]{};
 NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
@@ -218,6 +209,7 @@ float CalculateAngleToMouse(Point2f playerCenter, Point2f mousePos);
 bool HasEnemy(const int cellIndex, Enemy enemyArr[], int enemyArrSize);
 void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex);
 Room FetchRoom(const std::string& roomName);
+void TeleportPlayer(const int index, Player& player);
 
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize);
