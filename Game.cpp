@@ -185,6 +185,7 @@ void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex)
 {
 	player.dstRect = cellArr[dstIndex].dstRect;
 }
+
 #pragma endregion utilFunctions
 
 #pragma region textureHandling
