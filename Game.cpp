@@ -1276,8 +1276,8 @@ void EnterRoom()
 				}
 				else if (playerIndex == topDoorIdx)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
-					g_CurrentRoom = RoomStates::horizontal_hallway_2;
+					LoadRoomLayout(g_CellArr, "vertical_hallway_2.room");
+					g_CurrentRoom = RoomStates::vertical_hallway_2;
 				}
 				else if (playerIndex == rightDoorIdx)
 				{
