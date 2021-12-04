@@ -687,6 +687,10 @@ void InitEnemies(Enemy enemyArr[], const int enemyArrSize, Cell cellArr[], const
 {
 	int enemyNumber{};
 	enemyArr[enemyNumber] = InitializeEnemy("bat");
+	enemyArr[++enemyNumber] = InitializeEnemy("bat");
+	enemyArr[++enemyNumber] = InitializeEnemy("zombie");
+	enemyArr[++enemyNumber] = InitializeEnemy("zombie");
+
 
 
 
