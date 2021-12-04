@@ -11,7 +11,7 @@ void Start()
 {
 	// initialize game resources here
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
-	LoadRoomLayout(g_CellArr, "starting_room.room");
+	InitializeRooms(g_Level);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
@@ -23,13 +23,31 @@ void Draw()
 {
 	ClearBackground(0,0,0);
 
-	// Put your own draw statements here
-	DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
-	DrawEnemies(g_EnemyArr, g_EnemyArrSize);
-	DrawEnemyHealthBars(g_EnemyArr);
-	DrawPlayer(g_Player, g_PlayerSprites);
-	DrawWeaponInventory(g_Player);
-	DrawPlayerHealth(g_Player);
+
+
+	switch (g_Game)
+	{
+	case GameStates::startScreen:
+		DrawStartScreen();
+		
+		break;
+	case GameStates::playing:
+		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
+		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemyHealthBars(g_EnemyArr);
+		DrawPlayer(g_Player, g_PlayerSprites);
+		DrawWeaponInventory(g_Player);
+		DrawPlayerHealth(g_Player);
+		break;
+	case GameStates::gameOverScreen:
+		DrawEndScreen();
+		break;
+	case GameStates::restarting:
+		break;
+	default:
+		break;
+	}
+
 
 	//Comment this out to disable the debug grid
 	
@@ -44,7 +62,7 @@ void Update(float elapsedSec)
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
 	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
-
+	SetGameOverScreen(g_Player);
 }
 
 void End()
@@ -63,8 +81,11 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_TAB:
 		CycleWeapons(g_Player);
 		break;
+	case SDLK_SPACE:
+		Interact(g_Player, g_CellArr, g_GridSize, g_CurrentRoom);
+		break;
 	case SDLK_e:
-		EnterRoom(g_Player, g_CellArr, g_GridSize);
+		// EnterRoom(g_Player, g_CellArr, g_GridSize);
 		break;
 	case SDLK_k:
 		PlayerDebugInfo();
@@ -102,6 +123,7 @@ void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 	switch (e.button)
 	{
 	case (SDL_BUTTON_LEFT):
+		ClickStart(e);
 		UseWeapon(g_Player);
 		break;
 	}
@@ -189,6 +211,16 @@ void TeleportPlayer(const int index, Player& player)
 {
 	player.dstRect = g_CellArr[index].dstRect;
 	player.animationPos = g_CellArr[index].dstRect;
+}
+bool IsPointInRect(const Rectf& rectangle, const Point2f& point)
+{
+	return (point.x >= rectangle.left &&
+		point.x <= rectangle.left + rectangle.width &&
+		point.y >= rectangle.bottom &&
+		point.y <= rectangle.bottom + rectangle.height);
+
+	return false;
+
 }
 #pragma endregion utilFunctions
 
@@ -340,15 +372,7 @@ std::string FetchTextureName(const Texture& texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
-Room FetchRoom(const std::string& roomName)
-{
-	Room tempRoom{};
 
-	LoadRoomLayout(tempRoom.cells, roomName);
-
-	return tempRoom;
-
-}
 
 #pragma endregion textureHandling
 
@@ -578,6 +602,19 @@ void DrawPlayerHealth(const Player& player)
 		DrawHealthBar(player.animationPos, player.health, player.maxHealth);
 	}
 }
+
+void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom)
+{
+	int playerIndex{ GetPlayerGridIndex(player, cellArr, cellArrSize) };
+	if (cellArr[playerIndex].texture.id == FetchTexture("door_open").id
+		|| cellArr[playerIndex].texture.id == FetchTexture("door_transparent_open").id
+		|| cellArr[playerIndex].texture.id == FetchTexture("door_closed").id
+		|| cellArr[playerIndex].texture.id == FetchTexture("door_transparent_closed").id)
+	{
+		GoToLinkedRoom(currentRoom, playerIndex);
+	}
+}
+
 void UseWeapon(const Player& player)
 {
 	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
@@ -1081,18 +1118,6 @@ void ProcessAnimState(Player& player, Sprite Sprites[])
 		}
 	}
 }
-/* void SwitchPlayer(Player& player)
-{
-	Texture playerRight = FetchTexture("player_right");
-	Texture playerLeft = FetchTexture("player_left");
-	Texture playerUp = FetchTexture("player_up");
-	Texture playerDown = FetchTexture("player_down");
-
-	if (player.facing == Direction::right) player.sprite.texture = playerRight;
-	if (player.facing == Direction::up) player.sprite.texture = playerUp;
-	if (player.facing == Direction::left) player.sprite.texture = playerLeft;
-	if (player.facing == Direction::down) player.sprite.texture = playerDown;
-}*/
 
 #pragma endregion playerInputHandling
 
@@ -1156,155 +1181,102 @@ void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName)
 }
 
 // Room Handling
-void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
+void InitializeRooms(Room level[])
 {
-	int playerIndex{ GetPlayerGridIndex(player, cellArr, cellArrSize)};
+	// Below existing members we can add for example which enemies need to be loaded, 
+	// which destructables/interactables are in room, what items/chests there are etc.
+	Room& startingRoom = level[0];
+	startingRoom.name = "starting_room";
+	startingRoom.layoutToLoad = "starting_room.room";
+	startingRoom.topDoorDestination = "vertical_hallway_1";
 
-	Point2f top		{ 6 , 97 }; 
-	Point2f left	{ 52 , 63 };
-	Point2f right	{ 64 , 53 };
-	Point2f bottom	{ 110 , 19 };
-	// x contains the index of a door, e.g. the top door
-	// y contains the index of the cell you land on after entering that door, e.g. in front of the bottom door
+	Room& verticalHallway1 = level[1];
+	verticalHallway1.name = "vertical_hallway_1";
+	verticalHallway1.layoutToLoad = "vertical_hallway_1.room";
+	verticalHallway1.bottomDoorDestination = "starting_room";
+	verticalHallway1.topDoorDestination = "combat_room_1";
 
-	switch (g_CurrentRoom)
-		{
-		case RoomStates::starting_room:
-			{
-				if (playerIndex == top.x)
-				{
-					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
-					TeleportPlayer(int(top.y), player);
-					g_CurrentRoom = RoomStates::vertical_hallway_1;
-					TeleportPlayer(int(top.y), g_Player);
-				}
-				break;
-			}
+	Room& combatRoom1 = level[2];
+	combatRoom1.name = "combat_room_1";
+	combatRoom1.layoutToLoad = "combat_room_1.room";
+	combatRoom1.bottomDoorDestination = "vertical_hallway_1";
+	combatRoom1.topDoorDestination = "vertical_hallway_2";
+	combatRoom1.leftDoorDestination = "horizontal_hallway_3";
+	combatRoom1.rightDoorDestination = "horizontal_hallway_1";
 
-		case RoomStates::vertical_hallway_1:
-			{
-				if (playerIndex == top.x)
-				{
-					LoadRoomLayout(cellArr, "combat_room_1.room");
-					TeleportPlayer(int(top.y), player);
-					g_CurrentRoom = RoomStates::combat_room_1;
-					TeleportPlayer(int(top.y), g_Player);
-				}
-				else if (playerIndex == bottom.x)
-				{
-					LoadRoomLayout(cellArr, "starting_room.room");
-					TeleportPlayer(int(bottom.y), player);
-					g_CurrentRoom = RoomStates::starting_room;
-					TeleportPlayer(int(bottom.y), g_Player);
-				}
-				break;
-			}
+	Room& verticalHallway2 = level[3];
+	verticalHallway2.name = "vertical_hallway_2";
+	verticalHallway2.layoutToLoad = "vertical_hallway_2.room";
+	verticalHallway2.bottomDoorDestination = "combat_room_1";
+	verticalHallway2.topDoorDestination = "pickup_room_2";
 
-		case RoomStates::vertical_hallway_2:
-			{
-			if (playerIndex == top.x)
-			{
-				LoadRoomLayout(cellArr, "pickup_room_2.room");
-				TeleportPlayer(int(top.y), player);
-				g_CurrentRoom = RoomStates::pickup_room_2;
-			}
-			else if (playerIndex == bottom.x)
-			{
-				LoadRoomLayout(cellArr, "combat_room_1.room");
-				TeleportPlayer(int(bottom.y), player);
-				g_CurrentRoom = RoomStates::combat_room_1;
-			}
-			break;
-		}
+	Room& pickupRoom2 = level[4];
+	pickupRoom2.name = "pickup_room_2";
+	pickupRoom2.layoutToLoad = "pickup_room_2.room";
+	pickupRoom2.bottomDoorDestination = "vertical_hallway_2";
 
-		case RoomStates::vertical_hallway_3:
-			{
-			if (playerIndex == top.x)
-			{
-				LoadRoomLayout(cellArr, "combat_room_3.room");
-				TeleportPlayer(int(top.y), player);
-				g_CurrentRoom = RoomStates::combat_room_3;
-			}
-			else if (playerIndex == bottom.x)
-			{
-				LoadRoomLayout(cellArr, "pickup_room_3.room");
-				TeleportPlayer(int(bottom.y), player);
-				g_CurrentRoom = RoomStates::pickup_room_3;
-			}
-			break;
-		}
+	Room& horizontalHallway1 = level[5];
+	horizontalHallway1.name = "horizontal_hallway_1";
+	horizontalHallway1.layoutToLoad = "horizontal_hallway_1.room";
+	horizontalHallway1.leftDoorDestination = "combat_room_1";
+	horizontalHallway1.rightDoorDestination = "combat_room_2";
 
-		case RoomStates::horizontal_hallway_1:
-			{
-				if (playerIndex == right.x)
-				{
-					LoadRoomLayout(cellArr, "combat_room_2.room");
-					TeleportPlayer(int(right.y), player);
-					g_CurrentRoom = RoomStates::combat_room_2;
-				}
-				if (playerIndex == left.x)
-				{
-					LoadRoomLayout(cellArr, "combat_room_1.room");
-					TeleportPlayer(int(left.y), player);
-					g_CurrentRoom = RoomStates::combat_room_1;
-				}
-				break;
-			}
+	Room& combatRoom2 = level[6];
+	combatRoom2.name = "combat_room_2";
+	combatRoom2.layoutToLoad = "combat_room_2.room";
+	combatRoom2.leftDoorDestination = "horizontal_hallway_1";
+	combatRoom2.rightDoorDestination = "horizontal_hallway_2";
 
-		case RoomStates::horizontal_hallway_2:
-			{
-				if (playerIndex == right.x)
-				{
-					LoadRoomLayout(cellArr, "pickup_room_1.room");
-					TeleportPlayer(int(right.y), player);
-					g_CurrentRoom = RoomStates::pickup_room_1;
-				}
-				if (playerIndex == left.x)
-				{
-					LoadRoomLayout(cellArr, "combat_room_2.room");
-					TeleportPlayer(int(left.y), player);
-					g_CurrentRoom = RoomStates::combat_room_2;
-				}
-				break;
-			}
+	Room& horizontalHallway2 = level[7];
+	horizontalHallway2.name = "horizontal_hallway_2";
+	horizontalHallway2.layoutToLoad = "horizontal_hallway_2.room";
+	horizontalHallway2.leftDoorDestination = "combat_room_2";
+	horizontalHallway2.rightDoorDestination = "pickup_room_1";
 
-		case RoomStates::horizontal_hallway_3:
-			{
-				if (playerIndex == right.x)
-				{
-					LoadRoomLayout(cellArr, "combat_room_1.room");
-					TeleportPlayer(int(right.y), player);
-					g_CurrentRoom = RoomStates::combat_room_1;
-				}
-				if (playerIndex == left.x)
-				{
-					LoadRoomLayout(cellArr, "combat_room_3.room");
-					TeleportPlayer(int(left.y), player);
-					g_CurrentRoom = RoomStates::combat_room_3;
-				}
-				break;
-			}
+	Room& pickupRoom1 = level[8];
+	pickupRoom1.name = "pickup_room_1";
+	pickupRoom1.layoutToLoad = "pickup_room_1.room";
+	pickupRoom1.leftDoorDestination = "horizontal_hallway_2";
 
-		case RoomStates::horizontal_hallway_4:
-			{
-			if (playerIndex == right.x)
-			{
-				LoadRoomLayout(cellArr, "combat_room_3.room");
-				TeleportPlayer(int(right.y), player);
-				g_CurrentRoom = RoomStates::combat_room_3;
-			}
-			if (playerIndex == left.x)
-			{
-				LoadRoomLayout(cellArr, "boss_room.room");
-				TeleportPlayer(int(left.y), player);
-				g_CurrentRoom = RoomStates::boss_room;
-			}
-			break;
-		}
+	Room& horizontalHallway3 = level[9];
+	horizontalHallway3.name = "horizontal_hallway_3";
+	horizontalHallway3.layoutToLoad = "horizontal_hallway_3.room";
+	horizontalHallway3.leftDoorDestination = "combat_room_3";
+	horizontalHallway3.rightDoorDestination = "combat_room_1";
+
+	Room& combatRoom3 = level[10];
+	combatRoom3.name = "combat_room_3";
+	combatRoom3.layoutToLoad = "combat_room_3.room";
+	combatRoom3.rightDoorDestination = "horizontal_hallway_3";
+	combatRoom3.bottomDoorDestination = "vertical_hallway_3";
+	combatRoom3.leftDoorDestination = "horizontal_hallway_4";
+
+	Room& verticalHallway3 = level[11];
+	verticalHallway3.name = "vertical_hallway_3";
+	verticalHallway3.layoutToLoad = "vertical_hallway_3.room";
+	verticalHallway3.topDoorDestination = "combat_room_3";
+	verticalHallway3.bottomDoorDestination = "pickup_room_3";
+
+	Room& pickupRoom3 = level[12];
+	pickupRoom3.name = "pickup_room_3";
+	pickupRoom3.layoutToLoad = "pickup_room_3.room";
+	pickupRoom3.topDoorDestination = "vertical_hallway_3";
+
+	Room& horizontalHallway4 = level[13];
+	horizontalHallway4.name = "horizontal_hallway_4";
+	horizontalHallway4.layoutToLoad = "horizontal_hallway_4.room";
+	horizontalHallway4.rightDoorDestination = "combat_room_3";
+	horizontalHallway4.leftDoorDestination = "boss_room";
+
+	Room& bossRoom = level[14];
+	bossRoom.name = "boss_room";
+	bossRoom.layoutToLoad = "boss_room.room";
+	bossRoom.rightDoorDestination = "horizontal_hallway_4";
 
 	LoadRoom(level[0]);
 	g_CurrentRoom = level[0];
 }
+
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
 {
 	const int topDoor{ 6 };
@@ -1357,6 +1329,64 @@ void LoadRoom(const Room& roomToLoad)
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
+					LoadRoomLayout(cellArr, "horizontal_hallway_3.room");
+					TeleportPlayer(int(right.y), player);
+					g_CurrentRoom = RoomStates::horizontal_hallway_3;
+				}
+				else if (playerIndex == bottom.x)
+				{
+					LoadRoomLayout(cellArr, "vertical_hallway_3.room");
+					TeleportPlayer(int(bottom.y), player);
+					g_CurrentRoom = RoomStates::vertical_hallway_3;
+				}
+				break;
+			}
+
+		case RoomStates::pickup_room_1:
+			{
+				if (playerIndex == left.x)
+				{
+					LoadRoomLayout(cellArr, "horizontal_hallway_2.room");
+					TeleportPlayer(int(left.y), player);
+					g_CurrentRoom = RoomStates::horizontal_hallway_2;
+				}
+				break;
+			}
+
+		case RoomStates::pickup_room_2:
+			{
+				if (playerIndex == bottom.x)
+				{
+					LoadRoomLayout(cellArr, "vertical_hallway_2.room");
+					TeleportPlayer(int(bottom.y), player);
+					g_CurrentRoom = RoomStates::vertical_hallway_2;
+				}
+				break;
+			}
+
+		case RoomStates::pickup_room_3:
+			{
+			if (playerIndex == top.x)
+			{
+				LoadRoomLayout(cellArr, "vertical_hallway_3.room");
+				TeleportPlayer(int(top.y), player);
+				g_CurrentRoom = RoomStates::vertical_hallway_3;
+			}
+			break;
+		}
+
+		case RoomStates::boss_room:
+			{
+				if (playerIndex == right.x)
+				{
+					LoadRoomLayout(cellArr, "horizontal_hallway_4.room");
+					TeleportPlayer(int(right.y), player);
+					g_CurrentRoom = RoomStates::horizontal_hallway_4;
+				}
+				break;
+			}
+
+		}
 }
 
 
@@ -1516,5 +1546,50 @@ void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
 	}
 }
 #pragma endregion spriteHandling
+
+#pragma region gameHandling
+void DrawStartScreen()
+{
+	Texture startingScreen{ FetchTexture("starting_screen") };
+	Rectf dstRect{};
+	dstRect.width = g_WindowWidth;
+	dstRect.height = g_WindowHeight;
+	dstRect.left = 0;
+	dstRect.bottom = 0;
+
+	DrawTexture(startingScreen, dstRect);
+}
+void DrawEndScreen()
+{
+	Texture endScreen{ FetchTexture("end_screen") };
+	Rectf dstRect{};
+	dstRect.width = g_WindowWidth;
+	dstRect.height = g_WindowHeight;
+	dstRect.left = 0;
+	dstRect.bottom = 0;
+
+	DrawTexture(endScreen, dstRect);
+}
+void ClickStart(const SDL_MouseButtonEvent& e)
+{
+	if (g_Game == GameStates::startScreen)
+	{
+		Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
+		Rectf startButton{ 516.f,63.f, 246.f,81.f };
+
+		if (IsPointInRect(startButton, mousePos))
+		{
+			g_Game = GameStates::playing;
+		}
+	}
+}
+void SetGameOverScreen(Player& player)
+{
+	if (player.health <= 0.f)
+	{
+		g_Game = GameStates::gameOverScreen;
+	}
+}
+#pragma endregion gameHandling
 
 #pragma endregion ownDefinitions

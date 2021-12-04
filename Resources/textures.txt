@@ -41,3 +41,6 @@
 {zombie_idle_anim.png,zombie_idle_anim}
 {zombie_run_right_anim.png,zombie_run_right_anim}
 {zombie_run_left_anim.png,zombie_run_left_anim}
+{end_screen.png,end_screen}
+{starting_screen.png,starting_screen}
+
