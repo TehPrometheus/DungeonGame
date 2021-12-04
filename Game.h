@@ -13,6 +13,7 @@ float g_WindowHeight{ 720 };
 
 #pragma region ownDeclarations
 // Declare your own global variables here
+
 const int g_NrRows				{ 9 };
 const int g_NrCols				{ 13 };
 const int g_GridSize			{ g_NrRows * g_NrCols };
@@ -34,24 +35,7 @@ enum class GameStates
 	gameOverScreen,
 	restarting
 };
-enum class RoomStates
-{
-	starting_room,
-	vertical_hallway_1,
-	vertical_hallway_2,
-	vertical_hallway_3,
-	horizontal_hallway_1,
-	horizontal_hallway_2,
-	horizontal_hallway_3,
-	horizontal_hallway_4,
-	combat_room_1,
-	combat_room_2,
-	combat_room_3,
-	pickup_room_1,
-	pickup_room_2,
-	pickup_room_3,
-	boss_room
-};
+
 enum class EnemyType
 {
 	basic,
@@ -109,7 +93,7 @@ struct Item
 struct Weapon
 {
 	std::string name;
-	Texture texture{};
+	Texture texture;
 	WeaponType type{};
 	float damageOutput{};
 };
@@ -162,6 +146,11 @@ struct Enemy
 	float damageOutput;
 	int viewRange;
 };
+struct EnemyShorthand
+{
+	std::string type;
+	int location;
+};
 struct NamedTexture
 {
 	std::string name;
@@ -170,16 +159,25 @@ struct NamedTexture
 };
 struct Room
 {
-	Cell cells[g_GridSize]{};
-	std::string roomName;
+	std::string name{};
+	std::string layoutToLoad{};
+	std::string topDoorDestination{};
+	std::string leftDoorDestination{};
+	std::string bottomDoorDestination{};
+	std::string rightDoorDestination{};
+	EnemyShorthand enemiesAndLocations{};
+	bool isCleared{ false };
 };
 struct Level
 {
 	Room Rooms[g_NrRoomsPerLevel]{};
 };
 
+
+Room g_Level[15];
+Room g_CurrentRoom{};
+
 GameStates g_Game{ GameStates::startScreen };
-RoomStates g_CurrentRoom{ RoomStates::starting_room };
 Weapon g_Weapons[g_WeaponsInGame]{};
 Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame]{};
 Interactable g_InteractablesInRoom[10]{}; // For testing purposes
@@ -246,6 +244,8 @@ void UseWeapon(const Player& player);
 void UseSword(const Player& player);
 void AttackOnTiles(const Player& player, int indicesToScan[], int indicesAmount);
 
+void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
+
 // Weapons Handling
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
@@ -287,7 +287,12 @@ void SaveRoomLayout(Cell cellArr[], const int cellArrSize, const std::string& sa
 void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName);
 
 // Room Handling
-void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize);
+void InitializeRooms(Room level[]);
+void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex);
+void LoadRoom(const Room& roomToLoad);
+Room FetchRoom(std::string roomName);
+//void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize);
+// 
 // Level Handling
 
 // Sprite Handling
