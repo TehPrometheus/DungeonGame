@@ -14,18 +14,27 @@ float g_WindowHeight{ 720 };
 #pragma region ownDeclarations
 // Declare your own global variables here
 
-const int g_NrRows{ 9 };
-const int g_NrCols{ 13 };
-const int g_GridSize{ g_NrRows * g_NrCols };
-const int g_TexturesSize{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
-const int g_EnemyArrSize{ 12 };
-const int g_NrRoomsPerLevel{ 15 }; // Careful with this aswell
-const int g_RoomArrSize{ 10 };
-const int g_ItemInventorySize{ 5 };
-const int g_ItemsInGame{ 10 };
-const int g_WeaponInventorySize{ 3 };
-const int g_WeaponsInGame{ 10 };
-const int g_PlayerSpritesSize{ 20 };
+const int g_NrRows				{ 9 };
+const int g_NrCols				{ 13 };
+const int g_GridSize			{ g_NrRows * g_NrCols };
+const int g_TexturesSize		{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
+const int g_EnemyArrSize		{ 12 };
+const int g_NrRoomsPerLevel		{ 10 }; // Careful with this aswell
+const int g_RoomArrSize			{ 10 }; 
+const int g_ItemInventorySize	{ 5 };
+const int g_ItemsInGame			{ 10 };
+const int g_WeaponInventorySize	{ 3 };
+const int g_WeaponsInGame		{ 10 };
+const int g_PlayerSpritesSize	{ 20 };
+
+// enums
+enum class GameStates
+{
+	startScreen,
+	playing,
+	gameOverScreen,
+	restarting
+};
 
 enum class EnemyType
 {
@@ -164,9 +173,11 @@ struct Level
 	Room Rooms[g_NrRoomsPerLevel]{};
 };
 
+
 Room g_Level[15];
 Room g_CurrentRoom{};
-//RoomStates g_CurrentRoom{ RoomStates::starting_room };
+
+GameStates g_Game{ GameStates::startScreen };
 Weapon g_Weapons[g_WeaponsInGame]{};
 Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame]{};
 Interactable g_InteractablesInRoom[10]{}; // For testing purposes
@@ -203,6 +214,7 @@ float CalculateAngleToMouse(Point2f playerCenter, Point2f mousePos);
 bool HasEnemy(const int cellIndex, Enemy enemyArr[], int enemyArrSize);
 void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex);
 void TeleportPlayer(const int index, Player& player);
+bool IsPointInRect(const Rectf& rectangle, const Point2f& point);
 
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize);
@@ -286,6 +298,12 @@ Room FetchRoom(std::string roomName);
 // Sprite Handling
 void InitPlayerSprites(Sprite Sprites[]);
 void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec);
+
+// Game Handling
+void DrawStartScreen();
+void DrawEndScreen();
+void ClickStart(const SDL_MouseButtonEvent& e);
+void SetGameOverScreen(Player& player);
 
 #pragma endregion ownDeclarations
 
