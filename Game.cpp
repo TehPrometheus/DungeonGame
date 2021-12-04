@@ -43,6 +43,7 @@ void Update(float elapsedSec)
 	UpdateAnimationPos(elapsedSec, g_Player);
 	UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
+	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
 }
 
@@ -57,12 +58,10 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-	ProcessRunAnimState(g_Player, g_PlayerSprites, key);
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
-	ProcessIdleAnimState(g_Player, g_PlayerSprites, key);
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
@@ -974,7 +973,7 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		}
 	}
 }
-void SwitchPlayer(Player& player)
+/* void SwitchPlayer(Player& player)
 {
 	Texture playerRight = FetchTexture("player_right");
 	Texture playerLeft = FetchTexture("player_left");
@@ -985,7 +984,7 @@ void SwitchPlayer(Player& player)
 	if (player.facing == Direction::up) player.sprite.texture = playerUp;
 	if (player.facing == Direction::left) player.sprite.texture = playerLeft;
 	if (player.facing == Direction::down) player.sprite.texture = playerDown;
-}
+}*/
 void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 {
 	Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
@@ -1008,30 +1007,54 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 		player.facing = Direction::down;
 	}
 	else player.facing = Direction::left;
-	//SwitchPlayer(player);
 }
-void ProcessRunAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
+void ProcessAnimState(Player& player, Sprite Sprites[])
 {
-	if (key == SDLK_z || key == SDLK_d)
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+	if (pStates[SDL_SCANCODE_S] || pStates[SDL_SCANCODE_Q] || pStates[SDL_SCANCODE_W] || pStates[SDL_SCANCODE_D])
 	{
-		player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
-		player.animState = AnimStates::runRight;
+		switch (player.facing) {
+		case Direction::right:
+			player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
+			player.animState = AnimStates::runRight;
+			break;
+		case Direction::left:
+			player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
+			player.animState = AnimStates::runLeft;
+			break;
+		case Direction::up:
+			player.sprite.texture = Sprites[int(AnimStates::runUp)].texture;
+			player.animState = AnimStates::runUp;
+			break;
+		case Direction::down:
+			player.sprite.texture = Sprites[int(AnimStates::runDown)].texture;
+			player.animState = AnimStates::runDown;
+			break;
+		}
 	}
+	else
+	{
+		switch (player.facing) {
+		case Direction::right:
+			player.sprite.texture = Sprites[int(AnimStates::idleRight)].texture;
+			player.animState = AnimStates::idleRight;
+			break;
+		case Direction::left:
+			player.sprite.texture = Sprites[int(AnimStates::idleLeft)].texture;
+			player.animState = AnimStates::idleLeft;
+			break;
+		case Direction::up:
+			player.sprite.texture = Sprites[int(AnimStates::idleUp)].texture;
+			player.animState = AnimStates::idleUp;
+			break;
+		case Direction::down:
+			player.sprite.texture = Sprites[int(AnimStates::idleDown)].texture;
+			player.animState = AnimStates::idleDown;
+			break;
+		}
+	}
+}
 
-	if (key == SDLK_q || key == SDLK_s)
-	{
-		player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
-		player.animState = AnimStates::runLeft;
-	}
-}
-void ProcessIdleAnimState(Player& player, Sprite Sprites[], SDL_Keycode key)
-{
-	if (key == SDLK_q || key == SDLK_z || key == SDLK_s || key == SDLK_d)
-	{
-		player.sprite.texture = Sprites[int(AnimStates::idleRight)].texture;
-		player.animState = AnimStates::idleRight;
-	}
-}
 #pragma endregion inputHandling
 
 #pragma region roomHandling
@@ -1233,7 +1256,7 @@ void InitPlayerSprites(Sprite Sprites[])
 	Sprites[int(AnimStates::runDown)].accumulatedTime = 0.0f;
 	Sprites[int(AnimStates::runDown)].frameTime = 1 / 15.0f;
 
-	// initialize run down anim
+	// initialize run up anim
 	Sprites[int(AnimStates::runUp)].texture = FetchTexture("knight_run_up_anim");
 	Sprites[int(AnimStates::runUp)].cols = 4;
 	Sprites[int(AnimStates::runUp)].frames = 4;

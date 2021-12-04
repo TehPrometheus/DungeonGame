@@ -24,7 +24,7 @@ const int g_ItemInventorySize{ 5 };
 const int g_ItemsInGame{ 10 };
 const int g_WeaponInventorySize{ 3 };
 const int g_WeaponsInGame{ 10 };
-const int g_PlayerSpritesSize{ 3 };
+const int g_PlayerSpritesSize{ 20 };
 
 enum class EnemyType
 {
@@ -69,7 +69,7 @@ enum class AnimStates
 	runRight,
 	runLeft,
 	runUp,
-	runDown,
+	runDown, 
 	hit
 };
 
@@ -257,10 +257,9 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 
 // Input Handling
 void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec);
-void SwitchPlayer(Player& player);
+// void SwitchPlayer(Player& player);
 void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e);
-void ProcessRunAnimState(Player& player, Sprite Sprites[], SDL_Keycode key);
-void ProcessIdleAnimState(Player& player, Sprite Sprites[], SDL_Keycode key);
+void ProcessAnimState(Player& player, Sprite Sprites[]);
 
 // Level writing/reading handling
 void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFileName);
