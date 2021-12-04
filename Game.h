@@ -62,9 +62,14 @@ enum class Direction
 
 enum class AnimStates
 {
-	idle,
+	idleRight,
+	idleLeft,
+	idleUp,
+	idleDown,
 	runRight,
 	runLeft,
+	runUp,
+	runDown,
 	hit
 };
 
