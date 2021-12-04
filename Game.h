@@ -19,12 +19,34 @@ const int g_GridSize{ g_NrRows * g_NrCols };
 const int g_TexturesSize{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
 const int g_EnemyArrSize{ 12 };
 const int g_NrRoomsPerLevel{ 10 }; // Careful with this aswell
-const int g_RoomArrSize{ 100 }; 
+const int g_RoomArrSize{ 10 }; 
 const int g_ItemInventorySize{ 5 };
 const int g_ItemsInGame{ 10 };
 const int g_WeaponInventorySize{ 3 };
 const int g_WeaponsInGame{ 10 };
 const int g_PlayerSpritesSize{ 20 };
+
+enum class RoomStates
+{
+	starting_room,
+	vertical_hallway_1,
+	vertical_hallway_2,
+	vertical_hallway_3,
+	horizontal_hallway_1,
+	horizontal_hallway_2,
+	horizontal_hallway_3,
+	horizontal_hallway_4,
+	combat_room_1,
+	combat_room_2,
+	combat_room_3,
+	pickup_room_1,
+	pickup_room_2,
+	pickup_room_3,
+	boss_room,
+
+};
+
+RoomStates g_CurrentRoom{ RoomStates::starting_room };
 
 enum class EnemyType
 {
@@ -160,8 +182,6 @@ struct Level
 
 
 
-Room g_Rooms[g_RoomArrSize]{};
-Level g_Level1{};
 Weapon g_Weapons[g_WeaponsInGame];
 Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame];
 Interactable g_InteractablesInRoom[10]; // For testing purposes
@@ -190,6 +210,7 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 // Declare your own functions here
 
 // Utils
+void PlayerDebugInfo();
 int GetIndex(const int rowIdx, const int colIdx, const int nrCols); 
 int GetPlayerGridIndex(const Player& player, Cell cellArr[], const int arrSize);
 Point2f GetPlayerRowColumn(Player& player, Cell cellArr[], int nrRows, int nrCols); 
@@ -266,12 +287,9 @@ void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFile
 void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName);
 
 // Room Handling
-void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize);
-void InitRooms(Room rooms[]);
 Room FetchRoom(std::string roomName);
-
+void EnterRoom();
 // Level Handling
-void InitLevels(Level lvl, Room rooms[]);
 
 // Sprite Handling
 void InitPlayerSprites(Sprite Sprites[]);

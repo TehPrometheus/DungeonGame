@@ -11,9 +11,7 @@ void Start()
 {
 	// initialize game resources here
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
-	InitRooms(g_Rooms);
-	InitLevels(g_Level1, g_Rooms);
-	LoadRoomLayout(g_CellArr, "vertical_hallway.room");
+	LoadRoomLayout(g_CellArr, "starting_room.room");
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
@@ -33,8 +31,10 @@ void Draw()
 	DrawPlayer(g_Player, g_PlayerSprites);
 	DrawWeaponInventory(g_Player);
 	DrawPlayerHealth(g_Player);
+
 	//Comment this out to disable the debug grid
-	//DrawDebugGrid(g_CellArr, g_NrRows, g_NrCols);
+	
+	DrawDebugGrid(g_CellArr, g_NrRows, g_NrCols);
 
 }
 
@@ -62,6 +62,12 @@ void OnKeyDownEvent(SDL_Keycode key)
 	{
 	case SDLK_TAB:
 		CycleWeapons(g_Player);
+		break;
+	case SDLK_e:
+		EnterRoom();
+		break;
+	case SDLK_k:
+		PlayerDebugInfo();
 		break;
 	}
 }
@@ -95,6 +101,14 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 // Define your own functions here
 #pragma region utilFunctions
 // Utils
+void PlayerDebugInfo()
+{
+	int playerIndex{ GetPlayerGridIndex(g_Player, g_CellArr, g_GridSize) };
+	std::string StandingOnTextureWithName{ FetchTextureName(g_CellArr[playerIndex].texture) };
+	std::cerr << "playerindex: " << playerIndex << std::endl;
+	std::cerr << "StandingOnTextureWithName: " << StandingOnTextureWithName << std::endl;
+
+}
 int GetIndex(const int rowIdx, const int colIdx, const int nrCols)
 {
 	return rowIdx * nrCols + colIdx;
@@ -164,14 +178,14 @@ void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture tex
 	LoadTexturesFromFolder("resources", namedTextureArr, arrSize);
 
 	// Load numbers 0 through 95 for debug grid
-	/* for (int i = 0; i < numbersArrSize; i++)
+	 for (int i = 0; i < numbersArrSize; i++)
 	{
-		bool success = TextureFromString(std::to_string(i), "resources/Font.otf", 13, g_White, textureNumbersArr[i]);
+		bool success = TextureFromString(std::to_string(i), "resources/Font.ttf", 13, g_White, textureNumbersArr[i]);
 		if (!success)
 		{
 			std::cout << "Loading number " + std::to_string(i) + " from Font.otf failed" << std::endl;
 		}
-	} */
+	}
 }
 void LoadTexturesFromFolder(std::string folderPath, NamedTexture namedTextureArr[], const int arrSize)
 {
@@ -279,26 +293,6 @@ void DeleteTextures()
 		DeleteTexture(g_Numbers[i]);
 	}
 
-	// Delete textures stored in the levels array
-	// EXCEPTION IS THROWN WHEN j = 49, k = 70 (and for all values past this point)
-
-	for (int i = 0; i < g_NrRoomsPerLevel; i++)
-	{
-		for (int j = 0; j < g_GridSize; j++)
-		{
-			DeleteTexture(g_Level1.Rooms[i].cells[j].texture);
-		}
-	}
-
-	// Delete textures stored in the rooms array
-	for (int i = 0; i < g_RoomArrSize; i++)
-	{
-		for (int j = 0; j < g_GridSize; j++)
-		{
-			DeleteTexture(g_Rooms[i].cells[j].texture);
-		}
-	}
-
 	// Delete textures stored in the g_PlayerSprites array
 	for (int i = 0; i < g_PlayerSpritesSize; i++)
 	{
@@ -325,6 +319,16 @@ std::string FetchTextureName(Texture texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
+Room FetchRoom(std::string roomName)
+{
+	Room tempRoom{};
+
+	LoadRoomLayout(tempRoom.cells, roomName);
+
+	return tempRoom;
+
+}
+
 #pragma endregion textureHandling
 
 #pragma region gridHandling
@@ -407,7 +411,7 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 	InitPlayerSprites(Sprites);
 	player.sprite.texture = Sprites[idle].texture;
 	player.animState = AnimStates::idleRight;
-	player.dstRect = cellArr[40].dstRect; // 40 just a random location chosen for testing purposes
+	player.dstRect = cellArr[97].dstRect; // 97 is starting pos in starting room
 	player.animationPos = player.dstRect;
 	player.health = player.maxHealth;
 	player.weaponInventory[0] = FetchWeapon("basic_sword");
@@ -930,7 +934,7 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 }
 #pragma endregion enemyHandling
 
-#pragma region inputHandling
+#pragma region playerInputHandling
 // Input Handling
 void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec)
 {
@@ -964,6 +968,10 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 	{
 		player.timeTracker = 0;
 		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - nrCols;
+		if (newIndex < 0 || newIndex > g_GridSize-1)
+		{
+			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
+		}
 		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
@@ -973,6 +981,10 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 	{
 		player.timeTracker = 0;
 		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + nrCols;
+		if (newIndex < 0 || newIndex > g_GridSize - 1)
+		{
+			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
+		}
 		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
@@ -1061,7 +1073,7 @@ void ProcessAnimState(Player& player, Sprite Sprites[])
 	}
 }
 
-#pragma endregion inputHandling
+#pragma endregion playerInputHandling
 
 #pragma region roomHandling
 // Room save file handling
@@ -1123,92 +1135,239 @@ void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName)
 }
 
 // Room Handling
-Room FetchRoom(std::string roomName)
+void EnterRoom()
 {
-	for (int index{}; index < g_TexturesSize; ++index)
+	const int topDoorIdx{ 6 };
+	const int leftDoorIdx{ 52 };
+	const int rightDoorIdx{ 64 };
+	const int botDoorIdx{ 110 };
+
+	int playerIndex{ GetPlayerGridIndex(g_Player, g_CellArr, g_GridSize) };
+	std::string StandingOnTextureWithName{ FetchTextureName(g_CellArr[playerIndex].texture) };
+	
+	if (StandingOnTextureWithName == "door_open" || StandingOnTextureWithName == "door_transparent_open" ||
+		StandingOnTextureWithName == "door_closed" || StandingOnTextureWithName == "door_transparent_closed") // remove these 2 once roomclearing is implemented
 	{
-		if (g_Rooms[index].roomName == roomName)
+		switch (g_CurrentRoom)
 		{
-			return g_Rooms[index];
+		case RoomStates::starting_room:
+			{
+				LoadRoomLayout(g_CellArr, "vertical_hallway_1.room");
+				g_CurrentRoom = RoomStates::vertical_hallway_1;
+				break;
+			}
+
+		case RoomStates::vertical_hallway_1:
+			{
+				if (playerIndex == topDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "combat_room_1.room");
+					g_CurrentRoom = RoomStates::combat_room_1;
+				}
+				else if (playerIndex == botDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "starting_room.room");
+					g_CurrentRoom = RoomStates::starting_room;
+				}
+				break;
+			}
+
+		case RoomStates::vertical_hallway_2:
+			{
+			if (playerIndex == topDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "pickup_room_2.room");
+				g_CurrentRoom = RoomStates::pickup_room_2;
+			}
+			else if (playerIndex == botDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "combat_room_1.room");
+				g_CurrentRoom = RoomStates::combat_room_1;
+			}
+			break;
+		}
+
+		case RoomStates::vertical_hallway_3:
+			{
+			if (playerIndex == topDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "combat_room_3.room");
+				g_CurrentRoom = RoomStates::combat_room_3;
+			}
+			else if (playerIndex == botDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "pickup_room_3.room");
+				g_CurrentRoom = RoomStates::pickup_room_3;
+			}
+			break;
+		}
+
+		case RoomStates::horizontal_hallway_1:
+			{
+				if (playerIndex == rightDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "combat_room_2.room");
+					g_CurrentRoom = RoomStates::combat_room_2;
+				}
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "combat_room_1.room");
+					g_CurrentRoom = RoomStates::combat_room_1;
+				}
+				break;
+			}
+
+		case RoomStates::horizontal_hallway_2:
+			{
+				if (playerIndex == rightDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "pickup_room_1.room");
+					g_CurrentRoom = RoomStates::pickup_room_1;
+				}
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "combat_room_2.room");
+					g_CurrentRoom = RoomStates::combat_room_2;
+				}
+				break;
+			}
+
+		case RoomStates::horizontal_hallway_3:
+			{
+				if (playerIndex == rightDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "combat_room_1.room");
+					g_CurrentRoom = RoomStates::combat_room_1;
+				}
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "combat_room_3.room");
+					g_CurrentRoom = RoomStates::combat_room_3;
+				}
+				break;
+			}
+
+		case RoomStates::horizontal_hallway_4:
+			{
+			if (playerIndex == rightDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "combat_room_3.room");
+				g_CurrentRoom = RoomStates::combat_room_3;
+			}
+			if (playerIndex == leftDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "boss_room.room");
+				g_CurrentRoom = RoomStates::boss_room;
+			}
+			break;
+		}
+
+		case RoomStates::combat_room_1:
+			{
+				if (playerIndex == botDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "vertical_hallway_1.room");
+					g_CurrentRoom = RoomStates::vertical_hallway_1;
+				}
+				else if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_1.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_1;
+				}
+				else if (playerIndex == topDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_2;
+				}
+				else if (playerIndex == rightDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_3.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_3;
+				}
+				break;
+			}
+
+		case RoomStates::combat_room_2:
+			{
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_1.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_1;
+				}
+				else if (playerIndex == rightDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_2;
+				}
+				break;
+			}
+
+		case RoomStates::combat_room_3:
+			{
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_4.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_4;
+				}
+				else if (playerIndex == rightDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_3.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_3;
+				}
+				break;
+			}
+
+		case RoomStates::pickup_room_1:
+			{
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_2;
+				}
+				break;
+			}
+
+		case RoomStates::pickup_room_2:
+			{
+				if (playerIndex == botDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "vertical_hallway_2.room");
+					g_CurrentRoom = RoomStates::vertical_hallway_2;
+				}
+				break;
+			}
+
+		case RoomStates::pickup_room_3:
+			{
+			if (playerIndex == topDoorIdx)
+			{
+				LoadRoomLayout(g_CellArr, "vertical_hallway_3.room");
+				g_CurrentRoom = RoomStates::vertical_hallway_3;
+			}
+			break;
+		}
+
+		case RoomStates::boss_room:
+			{
+				if (playerIndex == leftDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "horizontal_hallway_4.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_4;
+				}
+				break;
+			}
+
 		}
 	}
-	return g_Rooms[99];
-
 }
-void InitRooms(Room rooms[])
-{
-	int index{};
-
-	LoadRoomLayout(rooms[index].cells, "bottom_door_room.room");
-	rooms[index].roomName = "bottom_door_room";
-
-	LoadRoomLayout(rooms[++index].cells, "horizontal_hallway.room");
-	rooms[index].roomName = "horizontal_hallway";
-
-	LoadRoomLayout(rooms[++index].cells, "left_door_room.room");
-	rooms[index].roomName = "left_door_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "leftright_door_room.room");
-	rooms[index].roomName = "leftright_door_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "leftrightbottom_door_room.room");
-	rooms[index].roomName = "leftrightbottom_door_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "leftrighttopbottom_door_room.room");
-	rooms[index].roomName = "leftrighttopbottom_door_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "right_door_room.room");
-	rooms[index].roomName = "right_door_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "starting_room.room");
-	rooms[index].roomName = "starting_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "top_door_room.room");
-	rooms[index].roomName = "top_door_room";
-	
-	LoadRoomLayout(rooms[++index].cells, "topbottom_room.room");
-	rooms[index].roomName = "top_door_room";
-
-}
-void UpdateRoom(Player& player, Cell cellArr[], const int cellArrSize)
-{
-	/*
-		This function should load the appropriate next room if the player walks on a 
-		tile that has an open door on it. OK
-		
-	
-	*/
-	int playerIndex = GetPlayerGridIndex(player, cellArr, cellArrSize);
-	
-	if (FetchTextureName(cellArr[playerIndex].texture) == "door1" || FetchTextureName(cellArr[playerIndex].texture) == "door2")
-	{
-		LoadRoomLayout(cellArr, "horizontal_hallway.room");
-		SetPlayerPos(player, cellArr, 55);
-	}
 
 
-}
 #pragma endregion roomHandling
 
 #pragma region levelHandling
 // Level Handling
-void InitLevels(Level lvl,Room rooms[])
-{
-	// this function should fill the g_levels[0] with rooms
-	int index{ 0 };
 
 
-	lvl.Rooms[index] = FetchRoom("starting_room");
-	lvl.Rooms[++index] = FetchRoom("vertical_hallway");
-	lvl.Rooms[++index] = FetchRoom("leftright_door_room");
-	lvl.Rooms[++index] = FetchRoom("horizontal_hallway");
-	lvl.Rooms[++index] = FetchRoom("left_door_room");
-	lvl.Rooms[++index] = FetchRoom("horizontal_hallway");
-	lvl.Rooms[++index] = FetchRoom("right_door_room");
-	// no idea what this green squiggly line is warning us about °O°
-
-
-}
 #pragma endregion levelHandling
 
 #pragma region spriteHandling
