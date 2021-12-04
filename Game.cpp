@@ -185,7 +185,11 @@ void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex)
 {
 	player.dstRect = cellArr[dstIndex].dstRect;
 }
-
+void TeleportPlayer(const int index, Player& player)
+{
+	player.dstRect = g_CellArr[index].dstRect;
+	player.animationPos = g_CellArr[index].dstRect;
+}
 #pragma endregion utilFunctions
 
 #pragma region textureHandling
@@ -1170,7 +1174,9 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == top.x)
 				{
 					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
+					TeleportPlayer(int(top.y), player);
 					g_CurrentRoom = RoomStates::vertical_hallway_1;
+					TeleportPlayer(int(top.y), g_Player);
 				}
 				break;
 			}
@@ -1180,12 +1186,16 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == top.x)
 				{
 					LoadRoomLayout(cellArr, "combat_room_1.room");
+					TeleportPlayer(int(top.y), player);
 					g_CurrentRoom = RoomStates::combat_room_1;
+					TeleportPlayer(int(top.y), g_Player);
 				}
 				else if (playerIndex == bottom.x)
 				{
 					LoadRoomLayout(cellArr, "starting_room.room");
+					TeleportPlayer(int(bottom.y), player);
 					g_CurrentRoom = RoomStates::starting_room;
+					TeleportPlayer(int(bottom.y), g_Player);
 				}
 				break;
 			}
@@ -1195,11 +1205,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 			if (playerIndex == top.x)
 			{
 				LoadRoomLayout(cellArr, "pickup_room_2.room");
+				TeleportPlayer(int(top.y), player);
 				g_CurrentRoom = RoomStates::pickup_room_2;
 			}
 			else if (playerIndex == bottom.x)
 			{
 				LoadRoomLayout(cellArr, "combat_room_1.room");
+				TeleportPlayer(int(bottom.y), player);
 				g_CurrentRoom = RoomStates::combat_room_1;
 			}
 			break;
@@ -1210,11 +1222,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 			if (playerIndex == top.x)
 			{
 				LoadRoomLayout(cellArr, "combat_room_3.room");
+				TeleportPlayer(int(top.y), player);
 				g_CurrentRoom = RoomStates::combat_room_3;
 			}
 			else if (playerIndex == bottom.x)
 			{
 				LoadRoomLayout(cellArr, "pickup_room_3.room");
+				TeleportPlayer(int(bottom.y), player);
 				g_CurrentRoom = RoomStates::pickup_room_3;
 			}
 			break;
@@ -1225,11 +1239,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "combat_room_2.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::combat_room_2;
 				}
 				if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "combat_room_1.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::combat_room_1;
 				}
 				break;
@@ -1240,11 +1256,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "pickup_room_1.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::pickup_room_1;
 				}
 				if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "combat_room_2.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::combat_room_2;
 				}
 				break;
@@ -1255,11 +1273,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "combat_room_1.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::combat_room_1;
 				}
 				if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "combat_room_3.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::combat_room_3;
 				}
 				break;
@@ -1270,11 +1290,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 			if (playerIndex == right.x)
 			{
 				LoadRoomLayout(cellArr, "combat_room_3.room");
+				TeleportPlayer(int(right.y), player);
 				g_CurrentRoom = RoomStates::combat_room_3;
 			}
 			if (playerIndex == left.x)
 			{
 				LoadRoomLayout(cellArr, "boss_room.room");
+				TeleportPlayer(int(left.y), player);
 				g_CurrentRoom = RoomStates::boss_room;
 			}
 			break;
@@ -1285,21 +1307,25 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == bottom.x)
 				{
 					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
+					TeleportPlayer(int(bottom.y), player);
 					g_CurrentRoom = RoomStates::vertical_hallway_1;
 				}
 				else if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_3.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_3;
 				}
 				else if (playerIndex == top.x)
 				{
 					LoadRoomLayout(cellArr, "vertical_hallway_2.room");
+					TeleportPlayer(int(top.y), player);
 					g_CurrentRoom = RoomStates::vertical_hallway_2;
 				}
 				else if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_1.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_1;
 				}
 				break;
@@ -1310,11 +1336,13 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_1.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_1;
 				}
 				else if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_2.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_2;
 				}
 				break;
@@ -1325,16 +1353,19 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_4.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_4;
 				}
 				else if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_3.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_3;
 				}
 				else if (playerIndex == bottom.x)
 				{
 					LoadRoomLayout(cellArr, "vertical_hallway_3.room");
+					TeleportPlayer(int(bottom.y), player);
 					g_CurrentRoom = RoomStates::vertical_hallway_3;
 				}
 				break;
@@ -1345,6 +1376,7 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == left.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_2.room");
+					TeleportPlayer(int(left.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_2;
 				}
 				break;
@@ -1355,6 +1387,7 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == bottom.x)
 				{
 					LoadRoomLayout(cellArr, "vertical_hallway_2.room");
+					TeleportPlayer(int(bottom.y), player);
 					g_CurrentRoom = RoomStates::vertical_hallway_2;
 				}
 				break;
@@ -1365,6 +1398,7 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 			if (playerIndex == top.x)
 			{
 				LoadRoomLayout(cellArr, "vertical_hallway_3.room");
+				TeleportPlayer(int(top.y), player);
 				g_CurrentRoom = RoomStates::vertical_hallway_3;
 			}
 			break;
@@ -1375,6 +1409,7 @@ void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 				if (playerIndex == right.x)
 				{
 					LoadRoomLayout(cellArr, "horizontal_hallway_4.room");
+					TeleportPlayer(int(right.y), player);
 					g_CurrentRoom = RoomStates::horizontal_hallway_4;
 				}
 				break;
