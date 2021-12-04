@@ -17,7 +17,6 @@ void Start()
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
 	InitInteractables();
 	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
-
 }
 
 void Draw()
@@ -45,6 +44,7 @@ void Update(float elapsedSec)
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
 	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
+
 }
 
 void End()
@@ -66,9 +66,20 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_e:
 		EnterRoom();
 		break;
-	case SDLK_k:
-		PlayerDebugInfo();
-		break;
+case SDLK_k:
+PlayerDebugInfo();
+break;
+case SDLK_o: // sets closed doors to open doors for debug purposes
+	for (int i = 0; i < g_GridSize; i++)
+	{
+		if (g_CellArr[i].texture.id == 9 || g_CellArr[i].texture.id == 11)
+		{
+			g_CellArr[i].texture = g_NamedTexturesArr[9].texture;
+			g_CellArr[i].isObstacle = !g_CellArr[i].isObstacle;
+		}
+
+	}
+	break;
 	}
 }
 
@@ -175,7 +186,7 @@ void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex)
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize)
 {
-	LoadTexturesFromFolder("resources", namedTextureArr, arrSize);
+	LoadTexturesFromFolder("Resources", namedTextureArr, arrSize);
 
 	// Load numbers 0 through 95 for debug grid
 	 for (int i = 0; i < numbersArrSize; i++)
@@ -991,18 +1002,6 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		}
 	}
 }
-/* void SwitchPlayer(Player& player)
-{
-	Texture playerRight = FetchTexture("player_right");
-	Texture playerLeft = FetchTexture("player_left");
-	Texture playerUp = FetchTexture("player_up");
-	Texture playerDown = FetchTexture("player_down");
-
-	if (player.facing == Direction::right) player.sprite.texture = playerRight;
-	if (player.facing == Direction::up) player.sprite.texture = playerUp;
-	if (player.facing == Direction::left) player.sprite.texture = playerLeft;
-	if (player.facing == Direction::down) player.sprite.texture = playerDown;
-}*/
 void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 {
 	Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
@@ -1072,6 +1071,18 @@ void ProcessAnimState(Player& player, Sprite Sprites[])
 		}
 	}
 }
+/* void SwitchPlayer(Player& player)
+{
+	Texture playerRight = FetchTexture("player_right");
+	Texture playerLeft = FetchTexture("player_left");
+	Texture playerUp = FetchTexture("player_up");
+	Texture playerDown = FetchTexture("player_down");
+
+	if (player.facing == Direction::right) player.sprite.texture = playerRight;
+	if (player.facing == Direction::up) player.sprite.texture = playerUp;
+	if (player.facing == Direction::left) player.sprite.texture = playerLeft;
+	if (player.facing == Direction::down) player.sprite.texture = playerDown;
+}*/
 
 #pragma endregion playerInputHandling
 
@@ -1145,15 +1156,17 @@ void EnterRoom()
 	int playerIndex{ GetPlayerGridIndex(g_Player, g_CellArr, g_GridSize) };
 	std::string StandingOnTextureWithName{ FetchTextureName(g_CellArr[playerIndex].texture) };
 	
-	if (StandingOnTextureWithName == "door_open" || StandingOnTextureWithName == "door_transparent_open" ||
-		StandingOnTextureWithName == "door_closed" || StandingOnTextureWithName == "door_transparent_closed") // remove these 2 once roomclearing is implemented
+	if (StandingOnTextureWithName == "door_open" || StandingOnTextureWithName == "door_transparent_open")
 	{
 		switch (g_CurrentRoom)
 		{
 		case RoomStates::starting_room:
 			{
-				LoadRoomLayout(g_CellArr, "vertical_hallway_1.room");
-				g_CurrentRoom = RoomStates::vertical_hallway_1;
+				if (playerIndex == topDoorIdx)
+				{
+					LoadRoomLayout(g_CellArr, "vertical_hallway_1.room");
+					g_CurrentRoom = RoomStates::vertical_hallway_1;
+				}
 				break;
 			}
 
@@ -1276,8 +1289,8 @@ void EnterRoom()
 				}
 				else if (playerIndex == topDoorIdx)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
-					g_CurrentRoom = RoomStates::horizontal_hallway_2;
+					LoadRoomLayout(g_CellArr, "vertical_hallway_2.room");
+					g_CurrentRoom = RoomStates::vertical_hallway_2;
 				}
 				else if (playerIndex == rightDoorIdx)
 				{
@@ -1381,7 +1394,7 @@ void InitPlayerSprites(Sprite Sprites[])
 	Sprites[int(AnimStates::idleRight)].accumulatedTime = 0.0f;
 	Sprites[int(AnimStates::idleRight)].frameTime = 1 / 8.0f;	
 
-	// initialize idle right anim
+	// initialize idle left anim
 	Sprites[int(AnimStates::idleLeft)].texture = FetchTexture("knight_idle_anim_left");
 	Sprites[int(AnimStates::idleLeft)].cols = 4;
 	Sprites[int(AnimStates::idleLeft)].frames = 4;
@@ -1389,7 +1402,7 @@ void InitPlayerSprites(Sprite Sprites[])
 	Sprites[int(AnimStates::idleLeft)].accumulatedTime = 0.0f;
 	Sprites[int(AnimStates::idleLeft)].frameTime = 1 / 8.0f;
 
-	// initialize idle right anim
+	// initialize idle up anim
 	Sprites[int(AnimStates::idleUp)].texture = FetchTexture("knight_idle_anim_up");
 	Sprites[int(AnimStates::idleUp)].cols = 4;
 	Sprites[int(AnimStates::idleUp)].frames = 4;
@@ -1397,7 +1410,7 @@ void InitPlayerSprites(Sprite Sprites[])
 	Sprites[int(AnimStates::idleUp)].accumulatedTime = 0.0f;
 	Sprites[int(AnimStates::idleUp)].frameTime = 1 / 8.0f;
 
-	// initialize idle right anim
+	// initialize idle down anim
 	Sprites[int(AnimStates::idleDown)].texture = FetchTexture("knight_idle_anim_down");
 	Sprites[int(AnimStates::idleDown)].cols = 4;
 	Sprites[int(AnimStates::idleDown)].frames = 4;
