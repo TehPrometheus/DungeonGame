@@ -595,25 +595,7 @@ void DrawPlayerHealth(const Player& player)
 	}
 }
 
-void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom)
-{
-	int playerIndex{ GetPlayerGridIndex(player, cellArr, cellArrSize) };
-	if (cellArr[playerIndex].texture.id == FetchTexture("door_open").id
-		|| cellArr[playerIndex].texture.id == FetchTexture("door_transparent_open").id
-		|| cellArr[playerIndex].texture.id == FetchTexture("door_closed").id
-		|| cellArr[playerIndex].texture.id == FetchTexture("door_transparent_closed").id)
-	{
-		GoToLinkedRoom(currentRoom, playerIndex);
-	}
-}
 
-void UseWeapon(const Player& player)
-{
-	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
-	{
-		UseSword(player);
-	}
-}
 void UseSword(const Player& player) 
 {
 	int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
@@ -673,7 +655,151 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 	}
 }
 #pragma endregion playerHandling
+#pragma region playerInputHandling
+// Input Handling
+void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec)
+{
+	float minTimeBetweenActions{ 1.f / player.speedModifier }; // THIS IS PROBABLY THE PROBLEM
+	int newIndex{};
+	const int nrCols{ g_NrCols };
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
+	player.timeTracker += elapsedSec;
+	bool IsReadyToAct{ player.timeTracker > minTimeBetweenActions };
+
+	if (pStates[SDL_SCANCODE_A] && IsReadyToAct)
+	{
+		player.timeTracker = 0;
+		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - 1;
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		{
+			player.dstRect = cellArr[newIndex].dstRect;
+		}
+	}
+	if (pStates[SDL_SCANCODE_D] && IsReadyToAct)
+	{
+		player.timeTracker = 0;
+		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + 1;
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		{
+			player.dstRect = cellArr[newIndex].dstRect;
+		}
+	}
+	if (pStates[SDL_SCANCODE_W] && IsReadyToAct)
+	{
+		player.timeTracker = 0;
+		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - nrCols;
+		if (newIndex < 0 || newIndex > g_GridSize - 1)
+		{
+			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
+		}
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		{
+			player.dstRect = cellArr[newIndex].dstRect;
+		}
+	}
+	if (pStates[SDL_SCANCODE_S] && IsReadyToAct)
+	{
+		player.timeTracker = 0;
+		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + nrCols;
+		if (newIndex < 0 || newIndex > g_GridSize - 1)
+		{
+			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
+		}
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		{
+			player.dstRect = cellArr[newIndex].dstRect;
+		}
+	}
+}
+void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
+{
+	Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
+	Point2f playerCenter{};
+	playerCenter.x = player.dstRect.left + player.dstRect.width / 2;
+	playerCenter.y = player.dstRect.bottom + player.dstRect.height / 2;
+	float angle{ CalculateAngleToMouse(playerCenter, mousePos) };
+	float quadrantDiv{ g_Pi / 4 };
+
+	if (angle > -quadrantDiv && angle < quadrantDiv)
+	{
+		player.facing = Direction::right;
+	}
+	else if (angle > quadrantDiv && angle < 3 * quadrantDiv)
+	{
+		player.facing = Direction::up;
+	}
+	else if (angle < -quadrantDiv && angle > -3 * quadrantDiv)
+	{
+		player.facing = Direction::down;
+	}
+	else player.facing = Direction::left;
+}
+void ProcessAnimState(Player& player, Sprite Sprites[])
+{
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+	if (pStates[SDL_SCANCODE_S] || pStates[SDL_SCANCODE_Q] || pStates[SDL_SCANCODE_W] || pStates[SDL_SCANCODE_D])
+	{
+		switch (player.facing) {
+		case Direction::right:
+			player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
+			player.animState = AnimStates::runRight;
+			break;
+		case Direction::left:
+			player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
+			player.animState = AnimStates::runLeft;
+			break;
+		case Direction::up:
+			player.sprite.texture = Sprites[int(AnimStates::runUp)].texture;
+			player.animState = AnimStates::runUp;
+			break;
+		case Direction::down:
+			player.sprite.texture = Sprites[int(AnimStates::runDown)].texture;
+			player.animState = AnimStates::runDown;
+			break;
+		}
+	}
+	else
+	{
+		switch (player.facing) {
+		case Direction::right:
+			player.sprite.texture = Sprites[int(AnimStates::idleRight)].texture;
+			player.animState = AnimStates::idleRight;
+			break;
+		case Direction::left:
+			player.sprite.texture = Sprites[int(AnimStates::idleLeft)].texture;
+			player.animState = AnimStates::idleLeft;
+			break;
+		case Direction::up:
+			player.sprite.texture = Sprites[int(AnimStates::idleUp)].texture;
+			player.animState = AnimStates::idleUp;
+			break;
+		case Direction::down:
+			player.sprite.texture = Sprites[int(AnimStates::idleDown)].texture;
+			player.animState = AnimStates::idleDown;
+			break;
+		}
+	}
+}
+void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom)
+{
+	int playerIndex{ GetPlayerGridIndex(player, cellArr, cellArrSize) };
+	if (cellArr[playerIndex].texture.id == FetchTexture("door_open").id
+		|| cellArr[playerIndex].texture.id == FetchTexture("door_transparent_open").id
+		|| cellArr[playerIndex].texture.id == FetchTexture("door_closed").id
+		|| cellArr[playerIndex].texture.id == FetchTexture("door_transparent_closed").id)
+	{
+		GoToLinkedRoom(currentRoom, playerIndex);
+	}
+}
+void UseWeapon(const Player& player)
+{
+	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
+	{
+		UseSword(player);
+	}
+}
+#pragma endregion playerInputHandling
 #pragma region weaponHandling
 // Weapon Handling
 void InitWeapons()
@@ -984,134 +1110,7 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 }
 #pragma endregion enemyHandling
 
-#pragma region playerInputHandling
-// Input Handling
-void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec)
-{
-	float minTimeBetweenActions{ 1.f / player.speedModifier }; // THIS IS PROBABLY THE PROBLEM
-	int newIndex{};
-	const int nrCols{ g_NrCols };
-	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
-	player.timeTracker += elapsedSec;
-	bool IsReadyToAct{ player.timeTracker > minTimeBetweenActions };
-
-	if (pStates[SDL_SCANCODE_A] && IsReadyToAct )
-	{
-		player.timeTracker = 0;
-		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - 1;
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize) )
-		{
-			player.dstRect = cellArr[newIndex].dstRect;
-		}
-	}
-	if (pStates[SDL_SCANCODE_D] && IsReadyToAct) 
-	{
-		player.timeTracker = 0;
-		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + 1;
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
-		{
-			player.dstRect = cellArr[newIndex].dstRect;
-		}
-	}
-	if (pStates[SDL_SCANCODE_W] && IsReadyToAct) 
-	{
-		player.timeTracker = 0;
-		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - nrCols;
-		if (newIndex < 0 || newIndex > g_GridSize-1)
-		{
-			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
-		}
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
-		{
-			player.dstRect = cellArr[newIndex].dstRect;
-		}
-	}
-	if (pStates[SDL_SCANCODE_S] && IsReadyToAct) 
-	{
-		player.timeTracker = 0;
-		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + nrCols;
-		if (newIndex < 0 || newIndex > g_GridSize - 1)
-		{
-			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
-		}
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
-		{
-			player.dstRect = cellArr[newIndex].dstRect;
-		}
-	}
-}
-void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
-{
-	Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
-	Point2f playerCenter{};
-	playerCenter.x = player.dstRect.left + player.dstRect.width / 2;
-	playerCenter.y = player.dstRect.bottom + player.dstRect.height / 2;
-	float angle{ CalculateAngleToMouse(playerCenter, mousePos) };
-	float quadrantDiv{ g_Pi / 4 };
-
-	if (angle > -quadrantDiv && angle < quadrantDiv)
-	{
-		player.facing = Direction::right;
-	}
-	else if (angle > quadrantDiv && angle < 3 * quadrantDiv)
-	{
-		player.facing = Direction::up;
-	}
-	else if (angle < -quadrantDiv && angle > -3 * quadrantDiv)
-	{
-		player.facing = Direction::down;
-	}
-	else player.facing = Direction::left;
-}
-void ProcessAnimState(Player& player, Sprite Sprites[])
-{
-	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-	if (pStates[SDL_SCANCODE_S] || pStates[SDL_SCANCODE_Q] || pStates[SDL_SCANCODE_W] || pStates[SDL_SCANCODE_D])
-	{
-		switch (player.facing) {
-		case Direction::right:
-			player.sprite.texture = Sprites[int(AnimStates::runRight)].texture;
-			player.animState = AnimStates::runRight;
-			break;
-		case Direction::left:
-			player.sprite.texture = Sprites[int(AnimStates::runLeft)].texture;
-			player.animState = AnimStates::runLeft;
-			break;
-		case Direction::up:
-			player.sprite.texture = Sprites[int(AnimStates::runUp)].texture;
-			player.animState = AnimStates::runUp;
-			break;
-		case Direction::down:
-			player.sprite.texture = Sprites[int(AnimStates::runDown)].texture;
-			player.animState = AnimStates::runDown;
-			break;
-		}
-	}
-	else
-	{
-		switch (player.facing) {
-		case Direction::right:
-			player.sprite.texture = Sprites[int(AnimStates::idleRight)].texture;
-			player.animState = AnimStates::idleRight;
-			break;
-		case Direction::left:
-			player.sprite.texture = Sprites[int(AnimStates::idleLeft)].texture;
-			player.animState = AnimStates::idleLeft;
-			break;
-		case Direction::up:
-			player.sprite.texture = Sprites[int(AnimStates::idleUp)].texture;
-			player.animState = AnimStates::idleUp;
-			break;
-		case Direction::down:
-			player.sprite.texture = Sprites[int(AnimStates::idleDown)].texture;
-			player.animState = AnimStates::idleDown;
-			break;
-		}
-	}
-}
-
-#pragma endregion playerInputHandling
 
 #pragma region roomHandling
 // Room save file handling
