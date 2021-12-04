@@ -217,14 +217,15 @@ Point2f GetPlayerRowColumn(Player& player, Cell cellArr[], int nrRows, int nrCol
 float CalculateAngleToMouse(Point2f playerCenter, Point2f mousePos);
 bool HasEnemy(const int cellIndex, Enemy enemyArr[], int enemyArrSize);
 void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex);
+Room FetchRoom(const std::string& roomName);
 
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize);
 void LoadTexture(const std::string texturePath, NamedTexture& namedTexture, std::string name, bool isObstacle);
 void LoadTexturesFromFolder(std::string folderPath, NamedTexture namedTextureArr[], const int arrSize);
 void DeleteTextures();
-Texture FetchTexture(std::string textureName);
-std::string FetchTextureName(Texture texture);
+Texture FetchTexture(const std::string& textureName);
+std::string FetchTextureName(const Texture& texture);
 
 // Grid Handling
 void InitGrid(Cell cellArr[], int nrRows, int nrCols);
@@ -283,12 +284,11 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e);
 void ProcessAnimState(Player& player, Sprite Sprites[]);
 
 // Level writing/reading handling
-void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFileName);
+void SaveRoomLayout(Cell cellArr[], const int cellArrSize, const std::string& saveFileName);
 void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName);
 
 // Room Handling
-Room FetchRoom(std::string roomName);
-void EnterRoom();
+void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize);
 // Level Handling
 
 // Sprite Handling

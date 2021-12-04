@@ -33,7 +33,7 @@ void Draw()
 
 	//Comment this out to disable the debug grid
 	
-	DrawDebugGrid(g_CellArr, g_NrRows, g_NrCols);
+	//DrawDebugGrid(g_CellArr, g_NrRows, g_NrCols);
 
 }
 
@@ -64,22 +64,27 @@ void OnKeyDownEvent(SDL_Keycode key)
 		CycleWeapons(g_Player);
 		break;
 	case SDLK_e:
-		EnterRoom();
+		EnterRoom(g_Player, g_CellArr, g_GridSize);
 		break;
-case SDLK_k:
-PlayerDebugInfo();
-break;
-case SDLK_o: // sets closed doors to open doors for debug purposes
-	for (int i = 0; i < g_GridSize; i++)
-	{
-		if (g_CellArr[i].texture.id == 9 || g_CellArr[i].texture.id == 11)
+	case SDLK_k:
+		PlayerDebugInfo();
+		break;
+	case SDLK_o: 
 		{
-			g_CellArr[i].texture = g_NamedTexturesArr[9].texture;
-			g_CellArr[i].isObstacle = !g_CellArr[i].isObstacle;
-		}
+			// opens all doors. Remove when room clearing is implemented
+			Point2f top{ 6 , 97 };
+			Point2f left{ 52 , 63 };
+			Point2f right{ 64 , 53 };
+			Point2f bottom{ 110 , 19 };
 
-	}
-	break;
+			g_CellArr[int(top.x)].isObstacle = false;
+			g_CellArr[int(left.x)].isObstacle = false;
+			g_CellArr[int(right.x)].isObstacle = false;
+			g_CellArr[int(bottom.x)].isObstacle = false;
+
+			std::cerr << "ALL DOOR TEXTURES ARE NOW SET TO OPEN" << std::endl;
+			break;
+		}
 	}
 }
 
@@ -312,7 +317,7 @@ void DeleteTextures()
 	}
 
 }
-Texture FetchTexture(std::string textureName)
+Texture FetchTexture(const std::string& textureName)
 {
 	for (int index{}; index < g_TexturesSize; ++index)
 	{
@@ -321,7 +326,7 @@ Texture FetchTexture(std::string textureName)
 	}
 	return g_NamedTexturesArr[0].texture;
 }
-std::string FetchTextureName(Texture texture)
+std::string FetchTextureName(const Texture& texture)
 {
 	for (int index{}; index < g_TexturesSize; ++index)
 	{
@@ -330,7 +335,7 @@ std::string FetchTextureName(Texture texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
-Room FetchRoom(std::string roomName)
+Room FetchRoom(const std::string& roomName)
 {
 	Room tempRoom{};
 
@@ -1088,7 +1093,7 @@ void ProcessAnimState(Player& player, Sprite Sprites[])
 
 #pragma region roomHandling
 // Room save file handling
-void SaveRoomLayout(Cell cellArr[], int cellArrSize, const std::string& saveFileName)
+void SaveRoomLayout(Cell cellArr[],const int cellArrSize, const std::string& saveFileName)
 {
 	std::fstream file;
 	file.open("RoomData/" + saveFileName + ".room", std::ios::out);
@@ -1146,25 +1151,24 @@ void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName)
 }
 
 // Room Handling
-void EnterRoom()
+void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize)
 {
-	const int topDoorIdx{ 6 };
-	const int leftDoorIdx{ 52 };
-	const int rightDoorIdx{ 64 };
-	const int botDoorIdx{ 110 };
+	int playerIndex{ GetPlayerGridIndex(player, cellArr, cellArrSize)};
 
-	int playerIndex{ GetPlayerGridIndex(g_Player, g_CellArr, g_GridSize) };
-	std::string StandingOnTextureWithName{ FetchTextureName(g_CellArr[playerIndex].texture) };
-	
-	if (StandingOnTextureWithName == "door_open" || StandingOnTextureWithName == "door_transparent_open")
-	{
-		switch (g_CurrentRoom)
+	Point2f top		{ 6 , 97 }; 
+	Point2f left	{ 52 , 63 };
+	Point2f right	{ 64 , 53 };
+	Point2f bottom	{ 110 , 19 };
+	// x contains the index of a door, e.g. the top door
+	// y contains the index of the cell you land on after entering that door, e.g. in front of the bottom door
+
+	switch (g_CurrentRoom)
 		{
 		case RoomStates::starting_room:
 			{
-				if (playerIndex == topDoorIdx)
+				if (playerIndex == top.x)
 				{
-					LoadRoomLayout(g_CellArr, "vertical_hallway_1.room");
+					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
 					g_CurrentRoom = RoomStates::vertical_hallway_1;
 				}
 				break;
@@ -1172,14 +1176,14 @@ void EnterRoom()
 
 		case RoomStates::vertical_hallway_1:
 			{
-				if (playerIndex == topDoorIdx)
+				if (playerIndex == top.x)
 				{
-					LoadRoomLayout(g_CellArr, "combat_room_1.room");
+					LoadRoomLayout(cellArr, "combat_room_1.room");
 					g_CurrentRoom = RoomStates::combat_room_1;
 				}
-				else if (playerIndex == botDoorIdx)
+				else if (playerIndex == bottom.x)
 				{
-					LoadRoomLayout(g_CellArr, "starting_room.room");
+					LoadRoomLayout(cellArr, "starting_room.room");
 					g_CurrentRoom = RoomStates::starting_room;
 				}
 				break;
@@ -1187,14 +1191,14 @@ void EnterRoom()
 
 		case RoomStates::vertical_hallway_2:
 			{
-			if (playerIndex == topDoorIdx)
+			if (playerIndex == top.x)
 			{
-				LoadRoomLayout(g_CellArr, "pickup_room_2.room");
+				LoadRoomLayout(cellArr, "pickup_room_2.room");
 				g_CurrentRoom = RoomStates::pickup_room_2;
 			}
-			else if (playerIndex == botDoorIdx)
+			else if (playerIndex == bottom.x)
 			{
-				LoadRoomLayout(g_CellArr, "combat_room_1.room");
+				LoadRoomLayout(cellArr, "combat_room_1.room");
 				g_CurrentRoom = RoomStates::combat_room_1;
 			}
 			break;
@@ -1202,14 +1206,14 @@ void EnterRoom()
 
 		case RoomStates::vertical_hallway_3:
 			{
-			if (playerIndex == topDoorIdx)
+			if (playerIndex == top.x)
 			{
-				LoadRoomLayout(g_CellArr, "combat_room_3.room");
+				LoadRoomLayout(cellArr, "combat_room_3.room");
 				g_CurrentRoom = RoomStates::combat_room_3;
 			}
-			else if (playerIndex == botDoorIdx)
+			else if (playerIndex == bottom.x)
 			{
-				LoadRoomLayout(g_CellArr, "pickup_room_3.room");
+				LoadRoomLayout(cellArr, "pickup_room_3.room");
 				g_CurrentRoom = RoomStates::pickup_room_3;
 			}
 			break;
@@ -1217,14 +1221,14 @@ void EnterRoom()
 
 		case RoomStates::horizontal_hallway_1:
 			{
-				if (playerIndex == rightDoorIdx)
+				if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "combat_room_2.room");
+					LoadRoomLayout(cellArr, "combat_room_2.room");
 					g_CurrentRoom = RoomStates::combat_room_2;
 				}
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "combat_room_1.room");
+					LoadRoomLayout(cellArr, "combat_room_1.room");
 					g_CurrentRoom = RoomStates::combat_room_1;
 				}
 				break;
@@ -1232,14 +1236,14 @@ void EnterRoom()
 
 		case RoomStates::horizontal_hallway_2:
 			{
-				if (playerIndex == rightDoorIdx)
+				if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "pickup_room_1.room");
+					LoadRoomLayout(cellArr, "pickup_room_1.room");
 					g_CurrentRoom = RoomStates::pickup_room_1;
 				}
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "combat_room_2.room");
+					LoadRoomLayout(cellArr, "combat_room_2.room");
 					g_CurrentRoom = RoomStates::combat_room_2;
 				}
 				break;
@@ -1247,14 +1251,14 @@ void EnterRoom()
 
 		case RoomStates::horizontal_hallway_3:
 			{
-				if (playerIndex == rightDoorIdx)
+				if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "combat_room_1.room");
+					LoadRoomLayout(cellArr, "combat_room_1.room");
 					g_CurrentRoom = RoomStates::combat_room_1;
 				}
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "combat_room_3.room");
+					LoadRoomLayout(cellArr, "combat_room_3.room");
 					g_CurrentRoom = RoomStates::combat_room_3;
 				}
 				break;
@@ -1262,14 +1266,14 @@ void EnterRoom()
 
 		case RoomStates::horizontal_hallway_4:
 			{
-			if (playerIndex == rightDoorIdx)
+			if (playerIndex == right.x)
 			{
-				LoadRoomLayout(g_CellArr, "combat_room_3.room");
+				LoadRoomLayout(cellArr, "combat_room_3.room");
 				g_CurrentRoom = RoomStates::combat_room_3;
 			}
-			if (playerIndex == leftDoorIdx)
+			if (playerIndex == left.x)
 			{
-				LoadRoomLayout(g_CellArr, "boss_room.room");
+				LoadRoomLayout(cellArr, "boss_room.room");
 				g_CurrentRoom = RoomStates::boss_room;
 			}
 			break;
@@ -1277,39 +1281,39 @@ void EnterRoom()
 
 		case RoomStates::combat_room_1:
 			{
-				if (playerIndex == botDoorIdx)
+				if (playerIndex == bottom.x)
 				{
-					LoadRoomLayout(g_CellArr, "vertical_hallway_1.room");
+					LoadRoomLayout(cellArr, "vertical_hallway_1.room");
 					g_CurrentRoom = RoomStates::vertical_hallway_1;
 				}
-				else if (playerIndex == leftDoorIdx)
+				else if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_1.room");
-					g_CurrentRoom = RoomStates::horizontal_hallway_1;
+					LoadRoomLayout(cellArr, "horizontal_hallway_3.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_3;
 				}
-				else if (playerIndex == topDoorIdx)
+				else if (playerIndex == top.x)
 				{
-					LoadRoomLayout(g_CellArr, "vertical_hallway_2.room");
+					LoadRoomLayout(cellArr, "vertical_hallway_2.room");
 					g_CurrentRoom = RoomStates::vertical_hallway_2;
 				}
-				else if (playerIndex == rightDoorIdx)
+				else if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_3.room");
-					g_CurrentRoom = RoomStates::horizontal_hallway_3;
+					LoadRoomLayout(cellArr, "horizontal_hallway_1.room");
+					g_CurrentRoom = RoomStates::horizontal_hallway_1;
 				}
 				break;
 			}
 
 		case RoomStates::combat_room_2:
 			{
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_1.room");
+					LoadRoomLayout(cellArr, "horizontal_hallway_1.room");
 					g_CurrentRoom = RoomStates::horizontal_hallway_1;
 				}
-				else if (playerIndex == rightDoorIdx)
+				else if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
+					LoadRoomLayout(cellArr, "horizontal_hallway_2.room");
 					g_CurrentRoom = RoomStates::horizontal_hallway_2;
 				}
 				break;
@@ -1317,24 +1321,29 @@ void EnterRoom()
 
 		case RoomStates::combat_room_3:
 			{
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_4.room");
+					LoadRoomLayout(cellArr, "horizontal_hallway_4.room");
 					g_CurrentRoom = RoomStates::horizontal_hallway_4;
 				}
-				else if (playerIndex == rightDoorIdx)
+				else if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_3.room");
+					LoadRoomLayout(cellArr, "horizontal_hallway_3.room");
 					g_CurrentRoom = RoomStates::horizontal_hallway_3;
+				}
+				else if (playerIndex == bottom.x)
+				{
+					LoadRoomLayout(cellArr, "vertical_hallway_3.room");
+					g_CurrentRoom = RoomStates::vertical_hallway_3;
 				}
 				break;
 			}
 
 		case RoomStates::pickup_room_1:
 			{
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == left.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_2.room");
+					LoadRoomLayout(cellArr, "horizontal_hallway_2.room");
 					g_CurrentRoom = RoomStates::horizontal_hallway_2;
 				}
 				break;
@@ -1342,9 +1351,9 @@ void EnterRoom()
 
 		case RoomStates::pickup_room_2:
 			{
-				if (playerIndex == botDoorIdx)
+				if (playerIndex == bottom.x)
 				{
-					LoadRoomLayout(g_CellArr, "vertical_hallway_2.room");
+					LoadRoomLayout(cellArr, "vertical_hallway_2.room");
 					g_CurrentRoom = RoomStates::vertical_hallway_2;
 				}
 				break;
@@ -1352,9 +1361,9 @@ void EnterRoom()
 
 		case RoomStates::pickup_room_3:
 			{
-			if (playerIndex == topDoorIdx)
+			if (playerIndex == top.x)
 			{
-				LoadRoomLayout(g_CellArr, "vertical_hallway_3.room");
+				LoadRoomLayout(cellArr, "vertical_hallway_3.room");
 				g_CurrentRoom = RoomStates::vertical_hallway_3;
 			}
 			break;
@@ -1362,16 +1371,15 @@ void EnterRoom()
 
 		case RoomStates::boss_room:
 			{
-				if (playerIndex == leftDoorIdx)
+				if (playerIndex == right.x)
 				{
-					LoadRoomLayout(g_CellArr, "horizontal_hallway_4.room");
+					LoadRoomLayout(cellArr, "horizontal_hallway_4.room");
 					g_CurrentRoom = RoomStates::horizontal_hallway_4;
 				}
 				break;
 			}
 
 		}
-	}
 }
 
 
