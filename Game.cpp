@@ -1209,6 +1209,11 @@ void InitializeRooms(Room level[])
 	combatRoom1.topDoorDestination = RoomID::verticalHallway2;
 	combatRoom1.leftDoorDestination = RoomID::horizontalHallway3;
 	combatRoom1.rightDoorDestination = RoomID::horizontalHallway1;
+	combatRoom1.enemyShorthand[0] = { "zombie", GetIndex(4, 6) };
+	combatRoom1.enemyShorthand[1] = { "bat", GetIndex(2, 2) };
+	combatRoom1.enemyShorthand[2] = { "bat", GetIndex(2, 10) };
+	combatRoom1.enemyShorthand[3] = { "bat", GetIndex(6, 2) };
+	combatRoom1.enemyShorthand[4] = { "bat", GetIndex(6, 10) };
 
 	Room& verticalHallway2 = level[3];
 	verticalHallway2.id = RoomID::verticalHallway2;
