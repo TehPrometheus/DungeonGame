@@ -15,7 +15,9 @@ void Start()
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
-	InitInteractables();
+	SpawnInteractable("basic_sword", 71);
+	SpawnInteractable("basic_sword", 70);
+	SpawnInteractable("basic_sword", 72);
 	// InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 }
 
@@ -36,6 +38,7 @@ void Draw()
 		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
+		DrawInteractables();
 		DrawWeaponInventory(g_Player);
 		DrawPlayerHealth(g_Player);
 		break;
@@ -199,6 +202,38 @@ bool HasEnemy(const int cellIndex, Enemy enemyArr[], int enemyArrSize)
 		}
 	}
 	return false;
+}
+bool HasInteractable(const int cellIndex, Interactable interactableArr[], int arrSize)
+{
+	for (int i{}; i < g_MaxInteractablesRoom; ++i)
+	{
+		if (g_Interactables[i].dstRect.bottom == g_CellArr[cellIndex].dstRect.bottom
+			&& g_Interactables[i].dstRect.left == g_CellArr[cellIndex].dstRect.left)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+int GetTilePlayerFacing()
+{
+	int playerTile{ GetPlayerGridIndex(g_Player, g_CellArr, g_GridSize) };
+	if (g_Player.facing == Direction::up)
+	{
+		return playerTile - g_NrCols;
+	}
+	else if (g_Player.facing == Direction::down)
+	{
+		return playerTile + g_NrCols;
+	}
+	else if (g_Player.facing == Direction::right)
+	{
+		return playerTile + 1;
+	}
+	else
+	{
+		return playerTile - 1;
+	}
 }
 void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex)
 {
@@ -456,7 +491,6 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 	player.dstRect = cellArr[97].dstRect; // 97 is starting pos in starting room
 	player.animationPos = player.dstRect;
 	player.health = player.maxHealth;
-	player.weaponInventory[0] = FetchWeapon("basic_sword");
 	player.selectedWeapon = 0;
 }
 void DrawPlayer(const Player& player, Sprite Sprites[])
@@ -551,11 +585,14 @@ void UpdateAnimationPos(float elapsedSec, Player& player)
 
 void DrawWeaponInventory(const Player& player)
 {
+	Texture weaponInv{ FetchTexture("weapon_inventory") };
+	Rectf origin{0, g_WindowHeight, weaponInv.width, weaponInv.height };
+	DrawTexture(weaponInv, origin);
 	for (int index{}; index < g_WeaponInventorySize; ++index)
 	{
 		const float slotHeight{ 64.f };
 		const float border{2.0f};
-		Rectf location{ 0, g_WindowHeight - (index + 1) * (slotHeight + border), slotHeight, slotHeight };
+		Rectf location{ origin.left + slotHeight + border, origin.bottom - (index + 2) * (slotHeight + border), slotHeight, slotHeight };
 		SetColor(g_White);
 		DrawRect(location);
 		DrawTexture(player.weaponInventory[index].texture, location);
@@ -600,46 +637,6 @@ void DrawPlayerHealth(const Player& player)
 	}
 }
 
-
-void UseSword(const Player& player) 
-{
-	int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
-	if (player.facing == Direction::up) {
-		const int tilesAmount{ 3 };
-		int tilesToScan[tilesAmount]{ playerIndex - g_NrCols - 1, playerIndex - g_NrCols, playerIndex - g_NrCols + 1 };
-		AttackOnTiles(player, tilesToScan, tilesAmount);
-	}
-	else if (player.facing == Direction::down) 
-	{
-		const int tilesAmount{ 3 };
-		int tilesToScan[tilesAmount]{ playerIndex + g_NrCols - 1, playerIndex + g_NrCols, playerIndex + g_NrCols + 1 };
-		AttackOnTiles(player, tilesToScan, tilesAmount);
-	}
-	else if (player.facing == Direction::right) 
-	{
-		const int tilesAmount{ 3 };
-		int tilesToScan[tilesAmount]{ playerIndex + 1, playerIndex + 1 - g_NrCols, playerIndex + 1 + g_NrCols };
-		AttackOnTiles(player, tilesToScan, tilesAmount);
-	}
-	else if (player.facing == Direction::left) 
-	{
-		const int tilesAmount{ 3 };
-		int tilesToScan[tilesAmount]{ playerIndex - 1, playerIndex - 1 - g_NrCols, playerIndex - 1 + g_NrCols };
-		AttackOnTiles(player, tilesToScan, tilesAmount);
-	}
-}
-void CycleWeapons(Player& player)
-{
-	if (player.selectedWeapon < g_WeaponInventorySize - 1)
-	{
-		++player.selectedWeapon;
-	}
-	else
-	{
-		player.selectedWeapon = 0;
-	}
-}
-
 void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 	for (int currentTile{}; currentTile < tilesAmount; ++currentTile)
 	{
@@ -677,7 +674,8 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 	{
 		player.timeTracker = 0;
 		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - 1;
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
 		}
@@ -686,7 +684,8 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 	{
 		player.timeTracker = 0;
 		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + 1;
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
 		}
@@ -699,7 +698,8 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		{
 			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
 		}
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
 		}
@@ -712,7 +712,8 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		{
 			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
 		}
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize))
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
 		}
@@ -744,7 +745,8 @@ void ProcessFacing(Player& player, const SDL_MouseMotionEvent& e)
 void ProcessAnimState(Player& player, Sprite Sprites[])
 {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-	if (pStates[SDL_SCANCODE_S] || pStates[SDL_SCANCODE_Q] || pStates[SDL_SCANCODE_W] || pStates[SDL_SCANCODE_D])
+	if (pStates[SDL_SCANCODE_S] || pStates[SDL_SCANCODE_Q] || pStates[SDL_SCANCODE_W] || pStates[SDL_SCANCODE_D]
+		|| pStates[SDL_SCANCODE_A] || pStates[SDL_SCANCODE_Z])
 	{
 		switch (player.facing) {
 		case Direction::right:
@@ -797,12 +799,65 @@ void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& curre
 	{
 		GoToLinkedRoom(currentRoom, playerIndex);
 	}
+	else if (HasInteractable(GetTilePlayerFacing(), g_Interactables, g_InteractablesInGame))
+	{
+		Interactable nullInteractable{};
+		for (int i{}; i < g_InteractablesInGame; ++i)
+		{
+			if (g_Interactables[i].location == GetTilePlayerFacing())
+			{
+				std::cout << "Interactable " << g_Interactables[i].name << " found at location " << g_Interactables[i].location << '\n';
+				if (g_Interactables[i].type == InteractableType::weaponDrop) {
+					g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[i].linkedWeapon;
+					g_Interactables[i] = nullInteractable;
+				}
+			}
+		}
+	}
 }
 void UseWeapon(const Player& player)
 {
 	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
 	{
 		UseSword(player);
+	}
+}
+void UseSword(const Player& player)
+{
+	int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
+	if (player.facing == Direction::up) {
+		const int tilesAmount{ 3 };
+		int tilesToScan[tilesAmount]{ playerIndex - g_NrCols - 1, playerIndex - g_NrCols, playerIndex - g_NrCols + 1 };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+	else if (player.facing == Direction::down)
+	{
+		const int tilesAmount{ 3 };
+		int tilesToScan[tilesAmount]{ playerIndex + g_NrCols - 1, playerIndex + g_NrCols, playerIndex + g_NrCols + 1 };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+	else if (player.facing == Direction::right)
+	{
+		const int tilesAmount{ 3 };
+		int tilesToScan[tilesAmount]{ playerIndex + 1, playerIndex + 1 - g_NrCols, playerIndex + 1 + g_NrCols };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+	else if (player.facing == Direction::left)
+	{
+		const int tilesAmount{ 3 };
+		int tilesToScan[tilesAmount]{ playerIndex - 1, playerIndex - 1 - g_NrCols, playerIndex - 1 + g_NrCols };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+}
+void CycleWeapons(Player& player)
+{
+	if (player.selectedWeapon < g_WeaponInventorySize - 1)
+	{
+		++player.selectedWeapon;
+	}
+	else
+	{
+		player.selectedWeapon = 0;
 	}
 }
 #pragma endregion playerInputHandling
@@ -839,13 +894,24 @@ Weapon FetchWeapon(const std::string& name)
 
 #pragma region interactableHandling
 // Interactable Handling
-void InitInteractables() 
+void SpawnInteractable(std::string name, int location)
 {
-	InitializeInteractable("basic_sword", InteractableType::weaponDrop);
+	bool spawned{ false };
+	for (int i{}; i < g_MaxInteractablesRoom; ++i)
+	{
+		if (g_Interactables[i].name == "" && !spawned)
+		{
+			g_Interactables[i] = InitializeInteractable(name, InteractableType::weaponDrop);
+			g_Interactables[i].dstRect = g_CellArr[location].dstRect;
+			g_Interactables[i].location = location;
+			spawned = true;
+		}
+	}
 }
-Interactable InitializeInteractable(const std::string& linkedItem, InteractableType type)
+Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type)
 {
 	Interactable initializedInteractable{};
+	initializedInteractable.name = linkedItem;
 	initializedInteractable.type = type;
 	if (type == InteractableType::weaponDrop)
 	{
@@ -856,6 +922,18 @@ Interactable InitializeInteractable(const std::string& linkedItem, InteractableT
 	}
 	return initializedInteractable;
 }
+void DrawInteractables()
+{
+	for (int i{}; i < g_MaxInteractablesRoom; ++i)
+	{
+		if (g_Interactables[i].type == InteractableType::weaponDrop)
+		{
+			DrawTexture(g_Interactables[i].linkedWeapon.texture, g_Interactables[i].dstRect);
+		}
+	}
+}
+
+
 #pragma endregion interactableHandling
 
 #pragma region enemyHandling

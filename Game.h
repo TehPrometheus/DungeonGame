@@ -20,12 +20,14 @@ const int g_GridSize			{ g_NrRows * g_NrCols };
 const int g_TexturesSize		{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
 const int g_EnemyArrSize		{ 12 };
 const int g_MaxEnemiesPerRoom   { 10 };
+const int g_MaxInteractablesRoom{ 5 };
 const int g_NrRoomsPerLevel		{ 15 }; // Careful with this aswell
 const int g_RoomArrSize			{ 10 }; 
 const int g_ItemInventorySize	{ 5 };
 const int g_ItemsInGame			{ 10 };
 const int g_WeaponInventorySize	{ 3 };
 const int g_WeaponsInGame		{ 10 };
+const int g_InteractablesInGame{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
 
 // enums
@@ -118,10 +120,13 @@ struct Weapon
 };
 struct Interactable
 {
+	std::string name;
 	InteractableType type;
 	Weapon linkedWeapon;
 	Item linkedItem;
 	Rectf dstRect;
+	int location;
+	bool pickedUp{ false };
 };
 struct Sprite
 {
@@ -168,7 +173,7 @@ struct Enemy
 struct EnemyShorthand
 {
 	std::string type;
-	int location;
+	int location{};
 };
 struct NamedTexture
 {
@@ -185,6 +190,7 @@ struct Room
 	RoomID bottomDoorDestination{};
 	RoomID rightDoorDestination{};
 	EnemyShorthand enemyShorthand[g_MaxEnemiesPerRoom];
+	Interactable interactables[g_MaxInteractablesRoom];
 	bool isCleared{ false };
 };
 struct Level
@@ -198,8 +204,7 @@ Room g_CurrentRoom{};
 
 GameStates g_Game{ GameStates::startScreen };
 Weapon g_Weapons[g_WeaponsInGame]{};
-Interactable g_Interactables[g_WeaponsInGame + g_ItemsInGame]{};
-Interactable g_InteractablesInRoom[10]{}; // For testing purposes
+Interactable g_Interactables[g_InteractablesInGame]{};
 Enemy g_EnemyArr[g_EnemyArrSize]{};
 Player g_Player{};
 Cell g_CellArr[g_GridSize]{};
@@ -234,6 +239,8 @@ bool HasEnemy(const int cellIndex, Enemy enemyArr[], int enemyArrSize);
 void SetPlayerPos(Player& player, Cell cellArr[], int dstIndex);
 void TeleportPlayer(const int index, Player& player);
 bool IsPointInRect(const Rectf& rectangle, const Point2f& point);
+int GetTilePlayerFacing();
+bool HasInteractable(const int cellIndex, Interactable interactableArr[], int arrSize);
 
 // Texture Handling
 void InitTextures(NamedTexture namedTextureArr[], const int arrSize, Texture textureNumbersArr[], const int numbersArrSize);
@@ -271,8 +278,9 @@ Weapon InitializeWeapon(const std::string& weaponName, const std::string& textur
 Weapon FetchWeapon(const std::string& name);
 
 // Interactable Handling
-void InitInteractables();
-Interactable InitializeInteractable(const std::string& linkedItem, InteractableType type);
+void SpawnInteractable(std::string name, int location);
+Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type);
+void DrawInteractables();
 
 // Enemy Handling
 int GetRandomSpawn(Cell cellArr[], const int cellArrSize);
