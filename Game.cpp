@@ -16,7 +16,7 @@ void Start()
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
 	InitInteractables();
-	InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
+	// InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 }
 
 void Draw()
@@ -62,6 +62,11 @@ void Update(float elapsedSec)
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
 	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
+	if (CheckRoomCleared(g_CurrentRoom)) 
+	{
+		SetRoomCleared(g_CurrentRoom);
+		OpenDoors(g_CellArr, g_GridSize);
+	}
 	SetGameOverScreen(g_Player);
 }
 
@@ -655,6 +660,7 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 	}
 }
 #pragma endregion playerHandling
+
 #pragma region playerInputHandling
 // Input Handling
 void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec)
@@ -800,6 +806,7 @@ void UseWeapon(const Player& player)
 	}
 }
 #pragma endregion playerInputHandling
+
 #pragma region weaponHandling
 // Weapon Handling
 void InitWeapons()
@@ -863,17 +870,23 @@ int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
 	} while (spawn == playerIndex || cellArr[spawn].isObstacle == true || HasEnemy(spawn, g_EnemyArr, g_EnemyArrSize));
 	return spawn;
 }
-void InitEnemies(Enemy enemyArr[], const int enemyArrSize, Cell cellArr[], const int cellArrSize)
+void InitEnemies()
 {
-	int enemyNumber{};
-	enemyArr[enemyNumber] = InitializeEnemy("bat");
-
-
-
-	for (int index{}; index < enemyNumber + 1; ++index)
+	for (int i{}; i < g_EnemyArrSize; ++i)
 	{
-		enemyArr[index].dstRect = cellArr[GetRandomSpawn(cellArr, cellArrSize)].dstRect;
-		enemyArr[index].animationPos = enemyArr[index].dstRect;
+		g_EnemyArr[i] = InitializeEnemy("none");
+	}
+}
+void SpawnEnemies(const EnemyShorthand enemies[])
+{
+	for (int i{}; i < g_MaxEnemiesPerRoom; ++i)
+	{
+		if (enemies[i].type != "")
+		{
+			g_EnemyArr[i] = InitializeEnemy(enemies[i].type);
+			g_EnemyArr[i].dstRect = g_CellArr[enemies[i].location].dstRect;
+			g_EnemyArr[i].animationPos = g_EnemyArr[i].dstRect;
+		}
 	}
 }
 
@@ -909,7 +922,7 @@ Enemy InitializeEnemy(std::string enemyName)
 		return InitializeEnemy(EnemyType::ranged, "enemy_skeleton", 5.f, 2.f, 0.8f, 10);
 	}
 	else
-		return InitializeEnemy(EnemyType::basic, "not_found", 1.0f, 0.0f, 100.f, 0);
+		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
 }
 
 void DrawEnemies(Enemy enemyArr[], int arrSize) 
@@ -960,6 +973,7 @@ void DrawEnemyHealthBars(Enemy enemyArr[])
 		}
 	}
 }
+
 void DestroyEnemy(Enemy& enemy) 
 {
 	Enemy defaultEnemy{};
@@ -1110,8 +1124,6 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 }
 #pragma endregion enemyHandling
 
-
-
 #pragma region roomHandling
 // Room save file handling
 void SaveRoomLayout(Cell cellArr[],const int cellArrSize, const std::string& saveFileName)
@@ -1180,12 +1192,15 @@ void InitializeRooms(Room level[])
 	startingRoom.name = "starting_room";
 	startingRoom.layoutToLoad = "starting_room.room";
 	startingRoom.topDoorDestination = "vertical_hallway_1";
+	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
+	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
 
 	Room& verticalHallway1 = level[1];
 	verticalHallway1.name = "vertical_hallway_1";
 	verticalHallway1.layoutToLoad = "vertical_hallway_1.room";
 	verticalHallway1.bottomDoorDestination = "starting_room";
 	verticalHallway1.topDoorDestination = "combat_room_1";
+	verticalHallway1.enemyShorthand[0] = { "zombie", GetIndex(1, 6) };
 
 	Room& combatRoom1 = level[2];
 	combatRoom1.name = "combat_room_1";
@@ -1320,6 +1335,9 @@ void LoadRoom(const Room& roomToLoad)
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
+	if (!roomToLoad.isCleared) {
+		SpawnEnemies(roomToLoad.enemyShorthand);
+	}
 }
 void OpenDoors(Cell cellArr[], int size)
 {
@@ -1338,6 +1356,32 @@ void OpenDoors(Cell cellArr[], int size)
 	}
 }
 
+bool CheckRoomCleared(Room& currentRoom) 
+{
+	if (currentRoom.isCleared == false)
+	{
+		for (int i{}; i < g_EnemyArrSize; ++i)
+		{
+			if (g_EnemyArr[i].health > 0.f)
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void SetRoomCleared(Room& currentRoom)
+{
+	currentRoom.isCleared = true;
+	for (int j{}; j < g_NrRoomsPerLevel; ++j)
+	{
+		if (g_Level[j].name == currentRoom.name)
+		{
+			g_Level[j].isCleared = true;
+		}
+	}
+}
 #pragma endregion roomHandling
 
 #pragma region levelHandling

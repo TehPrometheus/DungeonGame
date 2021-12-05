@@ -19,6 +19,7 @@ const int g_NrCols				{ 13 };
 const int g_GridSize			{ g_NrRows * g_NrCols };
 const int g_TexturesSize		{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
 const int g_EnemyArrSize		{ 12 };
+const int g_MaxEnemiesPerRoom   { 10 };
 const int g_NrRoomsPerLevel		{ 15 }; // Careful with this aswell
 const int g_RoomArrSize			{ 10 }; 
 const int g_ItemInventorySize	{ 5 };
@@ -165,7 +166,7 @@ struct Room
 	std::string leftDoorDestination{};
 	std::string bottomDoorDestination{};
 	std::string rightDoorDestination{};
-	EnemyShorthand enemiesAndLocations{};
+	EnemyShorthand enemyShorthand[g_MaxEnemiesPerRoom];
 	bool isCleared{ false };
 };
 struct Level
@@ -207,7 +208,7 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 
 // Utils
 void PlayerDebugInfo();
-int GetIndex(const int rowIdx, const int colIdx, const int nrCols); 
+int GetIndex(const int rowIdx, const int colIdx, const int nrCols = g_NrCols); 
 int GetPlayerGridIndex(const Player& player, Cell cellArr[], const int arrSize);
 Point2f GetPlayerRowColumn(Player& player, Cell cellArr[], int nrRows, int nrCols); 
 float CalculateAngleToMouse(Point2f playerCenter, Point2f mousePos);
@@ -260,9 +261,10 @@ int GetRandomSpawn(Cell cellArr[], const int cellArrSize);
 void DrawEnemies(Enemy enemyArr[], int arrSize);
 void UpdateAnimationPos(float elapsedSec, Enemy& enemy);
 // Enemy Initialization Handling
-void InitEnemies(Enemy enemyArr[], const int enemyArrSize, Cell cellArr[], const int cellArrSize);
+void InitEnemies();
 Enemy InitializeEnemy(std::string enemyName);
 Enemy InitializeEnemy(const EnemyType& type, const std::string& textureName, float maxHealth, float damage, float timePerAction, int viewRange);
+void SpawnEnemies(const EnemyShorthand enemies[]);
 
 int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize);
 
@@ -292,8 +294,9 @@ void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex);
 void LoadRoom(const Room& roomToLoad);
 Room FetchRoom(std::string roomName);
 void OpenDoors(Cell cellArr[], int size);
-//void EnterRoom(Player& player, Cell cellArr[], const int cellArrSize);
-// 
+bool CheckRoomCleared(Room& currentRoom);
+void SetRoomCleared(Room& currentRoom);
+
 // Level Handling
 
 // Sprite Handling
