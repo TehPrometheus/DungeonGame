@@ -1189,95 +1189,95 @@ void InitializeRooms(Room level[])
 	// Below existing members we can add for example which enemies need to be loaded, 
 	// which destructables/interactables are in room, what items/chests there are etc.
 	Room& startingRoom = level[0];
-	startingRoom.name = "starting_room";
+	startingRoom.id = RoomID::startingRoom;
 	startingRoom.layoutToLoad = "starting_room.room";
-	startingRoom.topDoorDestination = "vertical_hallway_1";
+	startingRoom.topDoorDestination = RoomID::verticalHallway1;
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
 
 	Room& verticalHallway1 = level[1];
-	verticalHallway1.name = "vertical_hallway_1";
+	verticalHallway1.id = RoomID::verticalHallway1;
 	verticalHallway1.layoutToLoad = "vertical_hallway_1.room";
-	verticalHallway1.bottomDoorDestination = "starting_room";
-	verticalHallway1.topDoorDestination = "combat_room_1";
+	verticalHallway1.bottomDoorDestination = RoomID::startingRoom;
+	verticalHallway1.topDoorDestination = RoomID::combatRoom1;
 	verticalHallway1.enemyShorthand[0] = { "zombie", GetIndex(1, 6) };
 
 	Room& combatRoom1 = level[2];
-	combatRoom1.name = "combat_room_1";
+	combatRoom1.id = RoomID::combatRoom1;
 	combatRoom1.layoutToLoad = "combat_room_1.room";
-	combatRoom1.bottomDoorDestination = "vertical_hallway_1";
-	combatRoom1.topDoorDestination = "vertical_hallway_2";
-	combatRoom1.leftDoorDestination = "horizontal_hallway_3";
-	combatRoom1.rightDoorDestination = "horizontal_hallway_1";
+	combatRoom1.bottomDoorDestination = RoomID::verticalHallway1;
+	combatRoom1.topDoorDestination = RoomID::verticalHallway2;
+	combatRoom1.leftDoorDestination = RoomID::horizontalHallway3;
+	combatRoom1.rightDoorDestination = RoomID::horizontalHallway1;
 
 	Room& verticalHallway2 = level[3];
-	verticalHallway2.name = "vertical_hallway_2";
+	verticalHallway2.id = RoomID::verticalHallway2;
 	verticalHallway2.layoutToLoad = "vertical_hallway_2.room";
-	verticalHallway2.bottomDoorDestination = "combat_room_1";
-	verticalHallway2.topDoorDestination = "pickup_room_2";
+	verticalHallway2.bottomDoorDestination = RoomID::combatRoom2;
+	verticalHallway2.topDoorDestination = RoomID::pickupRoom2;
 
 	Room& pickupRoom2 = level[4];
-	pickupRoom2.name = "pickup_room_2";
+	pickupRoom2.id = RoomID::pickupRoom2;
 	pickupRoom2.layoutToLoad = "pickup_room_2.room";
-	pickupRoom2.bottomDoorDestination = "vertical_hallway_2";
+	pickupRoom2.bottomDoorDestination = RoomID::verticalHallway2;
 
 	Room& horizontalHallway1 = level[5];
-	horizontalHallway1.name = "horizontal_hallway_1";
+	horizontalHallway1.id = RoomID::horizontalHallway1;
 	horizontalHallway1.layoutToLoad = "horizontal_hallway_1.room";
-	horizontalHallway1.leftDoorDestination = "combat_room_1";
-	horizontalHallway1.rightDoorDestination = "combat_room_2";
+	horizontalHallway1.leftDoorDestination = RoomID::combatRoom1;
+	horizontalHallway1.rightDoorDestination = RoomID::combatRoom2;
 
 	Room& combatRoom2 = level[6];
-	combatRoom2.name = "combat_room_2";
+	combatRoom2.id = RoomID::combatRoom2;
 	combatRoom2.layoutToLoad = "combat_room_2.room";
-	combatRoom2.leftDoorDestination = "horizontal_hallway_1";
-	combatRoom2.rightDoorDestination = "horizontal_hallway_2";
+	combatRoom2.leftDoorDestination = RoomID::horizontalHallway1;
+	combatRoom2.rightDoorDestination = RoomID::horizontalHallway2;
 
 	Room& horizontalHallway2 = level[7];
-	horizontalHallway2.name = "horizontal_hallway_2";
+	horizontalHallway2.id = RoomID::horizontalHallway2;
 	horizontalHallway2.layoutToLoad = "horizontal_hallway_2.room";
-	horizontalHallway2.leftDoorDestination = "combat_room_2";
-	horizontalHallway2.rightDoorDestination = "pickup_room_1";
+	horizontalHallway2.leftDoorDestination = RoomID::combatRoom2;
+	horizontalHallway2.rightDoorDestination = RoomID::pickupRoom1;
 
 	Room& pickupRoom1 = level[8];
-	pickupRoom1.name = "pickup_room_1";
+	pickupRoom1.id = RoomID::pickupRoom1;
 	pickupRoom1.layoutToLoad = "pickup_room_1.room";
-	pickupRoom1.leftDoorDestination = "horizontal_hallway_2";
+	pickupRoom1.leftDoorDestination = RoomID::horizontalHallway2;
 
 	Room& horizontalHallway3 = level[9];
-	horizontalHallway3.name = "horizontal_hallway_3";
+	horizontalHallway3.id = RoomID::horizontalHallway3;
 	horizontalHallway3.layoutToLoad = "horizontal_hallway_3.room";
-	horizontalHallway3.leftDoorDestination = "combat_room_3";
-	horizontalHallway3.rightDoorDestination = "combat_room_1";
+	horizontalHallway3.leftDoorDestination = RoomID::combatRoom3;
+	horizontalHallway3.rightDoorDestination = RoomID::combatRoom1;
 
 	Room& combatRoom3 = level[10];
-	combatRoom3.name = "combat_room_3";
+	combatRoom3.id = RoomID::combatRoom3;
 	combatRoom3.layoutToLoad = "combat_room_3.room";
-	combatRoom3.rightDoorDestination = "horizontal_hallway_3";
-	combatRoom3.bottomDoorDestination = "vertical_hallway_3";
-	combatRoom3.leftDoorDestination = "horizontal_hallway_4";
+	combatRoom3.rightDoorDestination = RoomID::horizontalHallway3;
+	combatRoom3.bottomDoorDestination = RoomID::verticalHallway3;
+	combatRoom3.leftDoorDestination = RoomID::horizontalHallway4;
 
 	Room& verticalHallway3 = level[11];
-	verticalHallway3.name = "vertical_hallway_3";
+	verticalHallway3.id = RoomID::verticalHallway3;
 	verticalHallway3.layoutToLoad = "vertical_hallway_3.room";
-	verticalHallway3.topDoorDestination = "combat_room_3";
-	verticalHallway3.bottomDoorDestination = "pickup_room_3";
+	verticalHallway3.topDoorDestination = RoomID::combatRoom3;
+	verticalHallway3.bottomDoorDestination = RoomID::pickupRoom3;
 
 	Room& pickupRoom3 = level[12];
-	pickupRoom3.name = "pickup_room_3";
+	pickupRoom3.id = RoomID::pickupRoom3;
 	pickupRoom3.layoutToLoad = "pickup_room_3.room";
-	pickupRoom3.topDoorDestination = "vertical_hallway_3";
+	pickupRoom3.topDoorDestination = RoomID::verticalHallway3;
 
 	Room& horizontalHallway4 = level[13];
-	horizontalHallway4.name = "horizontal_hallway_4";
+	horizontalHallway4.id = RoomID::horizontalHallway4;
 	horizontalHallway4.layoutToLoad = "horizontal_hallway_4.room";
-	horizontalHallway4.rightDoorDestination = "combat_room_3";
-	horizontalHallway4.leftDoorDestination = "boss_room";
+	horizontalHallway4.rightDoorDestination = RoomID::combatRoom3;
+	horizontalHallway4.leftDoorDestination = RoomID::bossRoom;
 
 	Room& bossRoom = level[14];
-	bossRoom.name = "boss_room";
+	bossRoom.id = RoomID::bossRoom;
 	bossRoom.layoutToLoad = "boss_room.room";
-	bossRoom.rightDoorDestination = "horizontal_hallway_4";
+	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
 	g_CurrentRoom = level[0];
 	LoadRoom(level[0]);
@@ -1315,17 +1315,17 @@ void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex)
 	}
 	LoadRoom(g_CurrentRoom);
 }
-Room FetchRoom(const std::string roomName)
+Room FetchRoom(const RoomID& id)
 {
 	const Room nullRoom{};
 	for (int i{0}; i < g_NrRoomsPerLevel; ++i)
 	{
-		if (g_Level[i].name == roomName)
+		if (g_Level[i].id == id)
 		{
 			return g_Level[i];
 		}
 	}
-	std::cout << "Room with name '" << roomName << "' not found\n";
+	std::cout << "Room with id '" << int(id) << "' not found\n";
 	return nullRoom;
 }
 void LoadRoom(const Room& roomToLoad)
@@ -1376,7 +1376,7 @@ void SetRoomCleared(Room& currentRoom)
 	currentRoom.isCleared = true;
 	for (int j{}; j < g_NrRoomsPerLevel; ++j)
 	{
-		if (g_Level[j].name == currentRoom.name)
+		if (g_Level[j].id == currentRoom.id)
 		{
 			g_Level[j].isCleared = true;
 		}

@@ -78,6 +78,24 @@ enum class AnimStates
 	runDown, 
 	hit
 };
+enum class RoomID
+{
+	startingRoom,
+	verticalHallway1,
+	verticalHallway2,
+	verticalHallway3,
+	horizontalHallway1,
+	horizontalHallway2,
+	horizontalHallway3,
+	horizontalHallway4,
+	combatRoom1,
+	combatRoom2,
+	combatRoom3,
+	pickupRoom1,
+	pickupRoom2,
+	pickupRoom3,
+	bossRoom
+};
 
 // structs
 struct Cell
@@ -160,12 +178,12 @@ struct NamedTexture
 };
 struct Room
 {
-	std::string name{};
+	RoomID id{};
 	std::string layoutToLoad{};
-	std::string topDoorDestination{};
-	std::string leftDoorDestination{};
-	std::string bottomDoorDestination{};
-	std::string rightDoorDestination{};
+	RoomID topDoorDestination{};
+	RoomID leftDoorDestination{};
+	RoomID bottomDoorDestination{};
+	RoomID rightDoorDestination{};
 	EnemyShorthand enemyShorthand[g_MaxEnemiesPerRoom];
 	bool isCleared{ false };
 };
@@ -292,7 +310,7 @@ void LoadRoomLayout(Cell targetCellArr[], const std::string& fileName);
 void InitializeRooms(Room level[]);
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex);
 void LoadRoom(const Room& roomToLoad);
-Room FetchRoom(std::string roomName);
+Room FetchRoom(const RoomID& id);
 void OpenDoors(Cell cellArr[], int size);
 bool CheckRoomCleared(Room& currentRoom);
 void SetRoomCleared(Room& currentRoom);
