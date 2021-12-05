@@ -16,6 +16,7 @@ void Start()
 	InitWeapons();
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
 	SpawnInteractable("basic_sword", 71);
+	SpawnInteractable("basic_axe", 45);
 	SpawnInteractable("basic_sword", 70);
 	SpawnInteractable("basic_sword", 72);
 	// InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
@@ -801,17 +802,36 @@ void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& curre
 	}
 	else if (HasInteractable(GetTilePlayerFacing(), g_Interactables, g_InteractablesInGame))
 	{
-		Interactable nullInteractable{};
 		for (int i{}; i < g_InteractablesInGame; ++i)
 		{
 			if (g_Interactables[i].location == GetTilePlayerFacing())
 			{
 				std::cout << "Interactable " << g_Interactables[i].name << " found at location " << g_Interactables[i].location << '\n';
-				if (g_Interactables[i].type == InteractableType::weaponDrop) {
-					g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[i].linkedWeapon;
-					g_Interactables[i] = nullInteractable;
-				}
+				PickUpInteractable(i);
 			}
+		}
+	}
+}
+void PickUpInteractable(int index)
+{
+	Interactable nullInteractable{};
+	if (g_Interactables[index].type == InteractableType::weaponDrop) {
+		bool pickedUp{ false };
+		for (int i{}; i < g_WeaponInventorySize; ++i)
+		{
+			if (g_Player.weaponInventory[i].name == "" && !pickedUp)
+			{
+				g_Player.weaponInventory[i] = g_Interactables[index].linkedWeapon;
+				g_Interactables[index] = nullInteractable;
+				pickedUp = true;
+			}
+		}
+		if (!pickedUp)
+		{
+			nullInteractable = g_Interactables[index];
+			nullInteractable.linkedWeapon = g_Player.weaponInventory[g_Player.selectedWeapon];
+			g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[index].linkedWeapon;
+			g_Interactables[index] = nullInteractable;
 		}
 	}
 }
@@ -867,6 +887,7 @@ void CycleWeapons(Player& player)
 void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.0f);
+	g_Weapons[1] = InitializeWeapon("basic_axe", "basic_axe", WeaponType::sword, 4.0f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -932,7 +953,14 @@ void DrawInteractables()
 		}
 	}
 }
-
+void ClearInteractables()
+{
+	Interactable nullInteractable{};
+	for (int i{}; i < g_MaxInteractablesRoom; ++i)
+	{
+		g_Interactables[i] = nullInteractable;
+	}
+}
 
 #pragma endregion interactableHandling
 
@@ -1296,7 +1324,7 @@ void InitializeRooms(Room level[])
 	Room& verticalHallway2 = level[3];
 	verticalHallway2.id = RoomID::verticalHallway2;
 	verticalHallway2.layoutToLoad = "vertical_hallway_2.room";
-	verticalHallway2.bottomDoorDestination = RoomID::combatRoom2;
+	verticalHallway2.bottomDoorDestination = RoomID::combatRoom1;
 	verticalHallway2.topDoorDestination = RoomID::pickupRoom2;
 
 	Room& pickupRoom2 = level[4];
@@ -1415,6 +1443,7 @@ void LoadRoom(const Room& roomToLoad)
 {
 	// This function will allow us to always retrieve the enemy array etc from any room we're loading by adding said code below
 	std::cout << roomToLoad.layoutToLoad << '\n';
+	ClearInteractables();
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);

@@ -271,6 +271,7 @@ void UseSword(const Player& player);
 void AttackOnTiles(const Player& player, int indicesToScan[], int indicesAmount);
 
 void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
+void PickUpInteractable(int index);
 
 // Weapons Handling
 void InitWeapons();
@@ -281,6 +282,7 @@ Weapon FetchWeapon(const std::string& name);
 void SpawnInteractable(std::string name, int location);
 Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type);
 void DrawInteractables();
+void ClearInteractables();
 
 // Enemy Handling
 int GetRandomSpawn(Cell cellArr[], const int cellArrSize);
