@@ -127,6 +127,7 @@ struct Projectile // WORK IN PROGRESS
 	Rectf location;
 	Texture texture;
 	float direction;
+	float damage;
 };
 struct Interactable
 {
@@ -242,7 +243,8 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_Magenta{ 255 / 255.f, 0 / 255.f, 255 / 255.f , 255 / 255.f },
 				g_Grey{ 204 / 255.f, 204 / 255.f, 204 / 255.f, 255 / 255.f },
 				g_Black{ 0,0,0,1 },
-				g_White{ 1,1,1,1 };
+				g_White{ 1,1,1,1 },
+				g_WhiteTransparent{1.f, 1.f, 1.f, 0.02f};
 
 // Declare your own functions here
 
@@ -288,6 +290,10 @@ void UseBow(const Player& player);
 void UseSword(const Player& player);
 void AttackOnTiles(const Player& player, int indicesToScan[], int indicesAmount);
 
+void DrawReach(const Player& player);
+void DrawSwordReach(const Player& player);
+void DrawBowReach(const Player& player);
+
 void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
 void PickUpInteractable(int index);
 
@@ -297,10 +303,11 @@ Weapon InitializeWeapon(const std::string& weaponName, const std::string& textur
 Weapon FetchWeapon(const std::string& name);
 
 // Projectile Handling
-void CreateProjectile(Rectf location, std::string type, float direction);
+void CreateProjectile(Rectf location, std::string type, float direction, float speed, float damage);
 Projectile InitializeProjectile(std::string type, float speed);
 void DrawProjectiles();
 void UpdateProjectiles(float elapsedSec);
+void DestroyProjectile(Projectile& projectile);
 
 // Interactable Handling
 void SpawnInteractable(std::string name, int location);

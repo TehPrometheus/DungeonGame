@@ -30,11 +30,12 @@ void Draw()
 		break;
 	case GameStates::playing:
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
+		DrawReach(g_Player);
+		DrawProjectiles();
 		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawInteractables();
-		DrawProjectiles();
 		DrawWeaponInventory(g_Player);
 		DrawPlayerHealth(g_Player);
 		break;
@@ -401,8 +402,6 @@ std::string FetchTextureName(const Texture& texture)
 	}
 	return g_NamedTexturesArr[0].name;
 }
-
-
 #pragma endregion textureHandling
 
 #pragma region gridHandling
@@ -584,7 +583,7 @@ void DrawWeaponInventory(const Player& player)
 {
 	const float slotSize{ 64.f };
 	Texture weaponInv{ FetchTexture("weapon_inventory") };
-	Rectf origin{slotSize/2, (g_WindowHeight - weaponInv.height)/2, weaponInv.width, weaponInv.height };
+	Rectf origin{0, (g_WindowHeight - weaponInv.height)/2, weaponInv.width, weaponInv.height };
 	DrawTexture(weaponInv, origin);
 	for (int index{}; index < g_WeaponInventorySize; ++index)
 	{
@@ -877,7 +876,28 @@ void UseSword(const Player& player)
 }
 void UseBow(const Player& player)
 {
-	CreateProjectile(player.dstRect, "arrow", 0.0f);
+	const float bowDamage{ player.weaponInventory[player.selectedWeapon].damageOutput };
+	const float projectileSpeed{ 500.f };
+	if (player.facing == Direction::right)
+	{
+		const float angle{ 0.0f };
+		CreateProjectile(player.animationPos, "arrow_right", angle, projectileSpeed, bowDamage);
+	}
+	else if (player.facing == Direction::left)
+	{
+		const float angle{ g_Pi };
+		CreateProjectile(player.animationPos, "arrow_left", angle, projectileSpeed, bowDamage);
+	}
+	else if (player.facing == Direction::up)
+	{
+		const float angle{ g_Pi/2 };
+		CreateProjectile(player.animationPos, "arrow_up", angle, projectileSpeed, bowDamage);
+	}
+	else if (player.facing == Direction::down)
+	{
+		const float angle{ 3*g_Pi/2 };
+		CreateProjectile(player.animationPos, "arrow_down", angle, projectileSpeed, bowDamage);
+	}
 }
 void CycleWeapons(Player& player)
 {
@@ -890,9 +910,96 @@ void CycleWeapons(Player& player)
 		player.selectedWeapon = 0;
 	}
 }
+
+void DrawReach(const Player& player)
+{
+	WeaponType playerWeapon{ player.weaponInventory[player.selectedWeapon].type };
+	SetColor(g_WhiteTransparent);
+	if (playerWeapon == WeaponType::sword)
+	{
+		DrawSwordReach(player);
+	}
+	else if (playerWeapon == WeaponType::bow)
+	{
+		DrawBowReach(player);
+	}
+}
+void DrawSwordReach(const Player& player)
+{
+	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword) {
+		int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
+		if (player.facing == Direction::up) {
+			FillRect(g_CellArr[playerIndex - g_NrCols - 1].dstRect);
+			FillRect(g_CellArr[playerIndex - g_NrCols].dstRect);
+			FillRect(g_CellArr[playerIndex - g_NrCols + 1].dstRect);
+		}
+		else if (player.facing == Direction::down && playerIndex + g_NrCols < g_GridSize)
+		// If index larger than gridsize, everything gets white overlay
+		{
+			FillRect(g_CellArr[playerIndex + g_NrCols - 1].dstRect);
+			FillRect(g_CellArr[playerIndex + g_NrCols].dstRect);
+			FillRect(g_CellArr[playerIndex + g_NrCols + 1].dstRect);
+		}
+		else if (player.facing == Direction::right)
+		{
+			FillRect(g_CellArr[playerIndex + 1 - g_NrCols].dstRect);
+			FillRect(g_CellArr[playerIndex + 1].dstRect);
+			FillRect(g_CellArr[playerIndex + 1 + g_NrCols].dstRect);
+		}
+		else if (player.facing == Direction::left)
+		{
+			FillRect(g_CellArr[playerIndex - 1 - g_NrCols].dstRect);
+			FillRect(g_CellArr[playerIndex - 1].dstRect);
+			FillRect(g_CellArr[playerIndex - 1 + g_NrCols].dstRect);
+		}
+	}
+}
+void DrawBowReach(const Player& player) 
+{
+	const int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
+	int nextIndex{ playerIndex };
+	if (player.facing == Direction::up)
+	{
+		do {
+			nextIndex -= g_NrCols;
+			FillRect(g_CellArr[nextIndex].dstRect);
+		} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
+			  && !g_CellArr[nextIndex].isObstacle
+			  && nextIndex > 0 && nextIndex < g_GridSize);
+	}
+	if (player.facing == Direction::down)
+	{
+		do {
+		nextIndex += g_NrCols;
+		FillRect(g_CellArr[nextIndex].dstRect);
+	} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
+		  && !g_CellArr[nextIndex].isObstacle
+		  && nextIndex > 0 && nextIndex < g_GridSize);
+	}
+	if (player.facing == Direction::left)
+	{
+		do {
+		nextIndex -= 1;
+		FillRect(g_CellArr[nextIndex].dstRect);
+	} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
+		  && !g_CellArr[nextIndex].isObstacle
+		  && nextIndex > 0 && nextIndex < g_GridSize);
+	}
+	if (player.facing == Direction::right)
+	{
+		do {
+			nextIndex += 1;
+			FillRect(g_CellArr[nextIndex].dstRect);
+		} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
+			  && !g_CellArr[nextIndex].isObstacle
+			  && nextIndex > 0 && nextIndex < g_GridSize);
+	}
+}
 #pragma endregion playerInputHandling
 
-void CreateProjectile(Rectf location, std::string type, float direction)
+#pragma region projectileHandling
+// Projectile Handling
+void CreateProjectile(Rectf location, std::string type, float direction, float speed, float damage)
 {
 	bool foundEmpty{ false };
 	int emptyIndex{};
@@ -906,17 +1013,18 @@ void CreateProjectile(Rectf location, std::string type, float direction)
 	}
 	if (foundEmpty)
 	{
-		g_Projectiles[emptyIndex] = InitializeProjectile("arrow", 50.f);
+		g_Projectiles[emptyIndex] = InitializeProjectile(type, speed);
 		g_Projectiles[emptyIndex].location = location;
 		g_Projectiles[emptyIndex].location.width = g_Projectiles[emptyIndex].texture.width;
 		g_Projectiles[emptyIndex].location.height = g_Projectiles[emptyIndex].texture.height;
 		g_Projectiles[emptyIndex].direction = direction;
+		g_Projectiles[emptyIndex].damage = damage;
 	}
 }
 Projectile InitializeProjectile(std::string type, float speed)
 {
 	Projectile projectile{};
-	projectile.texture = FetchTexture("arrow1"); // FOR TESTING PURPOSES
+	projectile.texture = FetchTexture(type); // FOR TESTING PURPOSES
 	projectile.type = type;
 	projectile.speed = speed;
 	return projectile;
@@ -928,15 +1036,49 @@ void DrawProjectiles()
 		DrawTexture(g_Projectiles[i].texture, g_Projectiles[i].location);
 	}
 }
-
 void UpdateProjectiles(float elapsedSec)
 {
 	for (int i{}; i < g_MaxProjectiles; ++i)
 	{
-		g_Projectiles[i].location.bottom += sinf(g_Projectiles[i].direction) * g_Projectiles[i].speed;
-		g_Projectiles[i].location.left += cosf(g_Projectiles[i].direction) * g_Projectiles[i].speed;
+		g_Projectiles[i].location.bottom += sinf(g_Projectiles[i].direction) * g_Projectiles[i].speed * elapsedSec;
+		g_Projectiles[i].location.left += cosf(g_Projectiles[i].direction) * g_Projectiles[i].speed * elapsedSec;
+		const float projectileSize{ 16.0f };
+		const Point2f projectileCenter
+		{
+			g_Projectiles[i].location.left + g_Projectiles[i].location.width / 2,
+			g_Projectiles[i].location.bottom + g_Projectiles[i].location.height / 2 };
+		const Point2f projectileTip{ 
+			projectileCenter.x + projectileSize * cosf(g_Projectiles[i].direction), 
+			projectileCenter.y + projectileSize * sinf(g_Projectiles[i].direction) };
+		// Damage appropriate target
+		for (int j{}; j < g_MaxEnemiesPerRoom; ++j)
+		{
+			if (IsPointInRect(g_EnemyArr[j].animationPos, projectileTip))
+			{
+				g_EnemyArr[j].health -= g_Projectiles[i].damage;
+				DestroyProjectile(g_Projectiles[i]);
+			}
+		}
+		for (int j{}; j < g_GridSize; ++j)
+		{
+			if (IsPointInRect(g_CellArr[j].dstRect, projectileTip) && g_CellArr[j].isObstacle)
+			{
+				DestroyProjectile(g_Projectiles[i]);
+			}
+		}
+		if (projectileTip.x < 0 || projectileTip.y < 0 || projectileTip.x > g_WindowWidth || projectileTip.y > g_WindowHeight)
+		{
+			DestroyProjectile(g_Projectiles[i]);
+		}
 	}
 }
+void DestroyProjectile(Projectile& projectile)
+{
+	Projectile nullProjectile{};
+	projectile = nullProjectile;
+}
+#pragma endregion projectileHandling
+
 #pragma region weaponHandling
 // Weapon Handling
 void InitWeapons()
@@ -1549,7 +1691,6 @@ void OpenDoors(Cell cellArr[], int size)
 		}
 	}
 }
-
 bool CheckRoomCleared(Room& currentRoom) 
 {
 	if (currentRoom.isCleared == false)
@@ -1564,7 +1705,6 @@ bool CheckRoomCleared(Room& currentRoom)
 	}
 	return true;
 }
-
 void SetRoomCleared(Room& currentRoom)
 {
 	currentRoom.isCleared = true;
