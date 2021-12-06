@@ -294,7 +294,7 @@ void DrawSwordReach(const Player& player);
 void DrawBowReach(const Player& player);
 
 void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
-void PickUpInteractable(int index);
+void PickUpInteractable(int index, int location);
 
 // Weapons Handling
 void InitWeapons();
@@ -311,7 +311,7 @@ void DestroyProjectile(Projectile& projectile);
 // Interactable Handling
 void SpawnInteractable(std::string name, int location);
 void SpawnInteractablesInRoom(const Room& room);
-void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement);
+void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement, int location);
 
 Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type);
 void DrawInteractables();

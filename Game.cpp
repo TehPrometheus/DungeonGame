@@ -805,7 +805,7 @@ void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& curre
 		{
 			if (g_Interactables[i].location == GetTilePlayerFacing())
 			{
-				PickUpInteractable(i);
+				PickUpInteractable(i, g_Interactables[i].location);
 			}
 		}
 	}
@@ -1108,7 +1108,7 @@ void SpawnInteractablesInRoom(const Room & room)
 			SpawnInteractable(room.interactableShort[i].name, room.interactableShort[i].location);
 		}
 }
-void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement)
+void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement, int location)
 {
 	bool replaced{ false };
 	for (int j{}; j < g_MaxInteractablesRoom; ++j)
@@ -1121,7 +1121,7 @@ void ReplaceInteractableInRoom(const Room& room, std::string interactableToRepla
 	}
 }
 
-void PickUpInteractable(int index)
+void PickUpInteractable(int index, int location)
 {
 	Interactable placeholder{};
 	if (g_Interactables[index].type == InteractableType::weaponDrop) {
@@ -1131,7 +1131,7 @@ void PickUpInteractable(int index)
 			if (g_Player.weaponInventory[i].name == "" && !pickedUp)
 			{
 				g_Player.weaponInventory[i] = g_Interactables[index].linkedWeapon;
-				ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name);
+				ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name, location);
 				g_Interactables[index] = placeholder;
 				pickedUp = true;
 			}
@@ -1141,7 +1141,7 @@ void PickUpInteractable(int index)
 			Weapon weaponHolder = g_Player.weaponInventory[g_Player.selectedWeapon];
 			g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[index].linkedWeapon;
 			g_Interactables[index].linkedWeapon = weaponHolder;
-			ReplaceInteractableInRoom(g_CurrentRoom, g_Player.weaponInventory[g_Player.selectedWeapon].name, weaponHolder.name);
+			ReplaceInteractableInRoom(g_CurrentRoom, g_Player.weaponInventory[g_Player.selectedWeapon].name, weaponHolder.name, location);
 		}
 	}
 }
@@ -1312,18 +1312,6 @@ void ClearEnemies()
 void DestroyEnemy(Enemy& enemy) 
 {
 	Enemy defaultEnemy{};
-	if (enemy.type == EnemyType::destructible) 
-	{
-		for (int i{}; i < g_MaxEnemiesPerRoom; i++)
-		{
-			EnemyShorthand& targetDestructible{ g_Level[int(g_CurrentRoom.id)].enemyShorthand[i] };
-			if (enemy.dstRect.left == g_CellArr[targetDestructible.location].dstRect.left
-				&& enemy.dstRect.bottom == g_CellArr[targetDestructible.location].dstRect.bottom)
-			{
-				targetDestructible.type = "";
-			}
-		}
-	}
 	enemy = defaultEnemy;
 }
 
@@ -1697,6 +1685,7 @@ void LoadRoom(const Room& roomToLoad)
 	if (!roomToLoad.isCleared) {
 		SpawnEnemies(roomToLoad.enemyShorthand);
 	}
+
 }
 void OpenDoors(Cell cellArr[], int size)
 {
