@@ -43,9 +43,8 @@ enum class GameStates
 enum class EnemyType
 {
 	basic,
-	strong,
 	ranged,
-	boss
+	destructible
 };
 enum class WeaponType
 {
@@ -333,6 +332,8 @@ int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize);
 void DrawEnemyHealth(const Enemy& enemy);
 void DrawEnemyHealthBars(Enemy enemyArr[]);
 void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize);
+
+void ClearEnemies();
 void DestroyEnemy(Enemy& enemy);
 
 // Enemy AI Handling

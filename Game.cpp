@@ -593,13 +593,13 @@ void DrawWeaponInventory(const Player& player)
 		location.bottom = origin.bottom + weaponInv.height - (index + 2) * (slotSize + border);
 		location.width = slotSize;
 		location.height = slotSize;
-		SetColor(g_White);
+		SetColor(g_Grey);
 		DrawRect(location);
 		DrawTexture(player.weaponInventory[index].texture, location);
-		if (player.weaponInventory[index].texture.id == NULL)
+		if (player.weaponInventory[index].name == "")
 		{
 			SetColor(g_Grey);
-			FillRect(location);
+			DrawRect(location);
 		}
 		if (player.selectedWeapon == index)
 		{
@@ -805,34 +805,8 @@ void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& curre
 		{
 			if (g_Interactables[i].location == GetTilePlayerFacing())
 			{
-				std::cout << "Interactable " << g_Interactables[i].name << " found at location " << g_Interactables[i].location << '\n';
 				PickUpInteractable(i);
 			}
-		}
-	}
-}
-void PickUpInteractable(int index)
-{
-	Interactable placeholder{};
-	if (g_Interactables[index].type == InteractableType::weaponDrop) {
-		bool pickedUp{ false };
-		for (int i{}; i < g_WeaponInventorySize; ++i)
-		{
-			if (g_Player.weaponInventory[i].name == "" && !pickedUp)
-			{
-				g_Player.weaponInventory[i] = g_Interactables[index].linkedWeapon;
-				ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name);
-				g_Interactables[index] = placeholder;
-				pickedUp = true;
-			}
-		}
-		if (!pickedUp)
-		{
-			placeholder = g_Interactables[index];
-			placeholder.linkedWeapon = g_Player.weaponInventory[g_Player.selectedWeapon];
-			g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[index].linkedWeapon;
-			ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name);
-			g_Interactables[index] = placeholder;
 		}
 	}
 }
@@ -1084,7 +1058,7 @@ void DestroyProjectile(Projectile& projectile)
 // Weapon Handling
 void InitWeapons()
 {
-	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.0f);
+	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.5f);
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
@@ -1136,17 +1110,38 @@ void SpawnInteractablesInRoom(const Room & room)
 }
 void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement)
 {
-	for (int i{}; i < g_NrRoomsPerLevel; ++i)
+	bool replaced{ false };
+	for (int j{}; j < g_MaxInteractablesRoom; ++j)
 	{
-		if (room.id == g_Level[i].id)
+		if (g_Level[int(room.id)].interactableShort[j].name == interactableToReplace && !replaced)
 		{
-			for (int j{}; j < g_MaxInteractablesRoom; ++j)
+			g_Level[int(room.id)].interactableShort[j].name = interactableReplacement;
+			replaced = true;
+		}
+	}
+}
+
+void PickUpInteractable(int index)
+{
+	Interactable placeholder{};
+	if (g_Interactables[index].type == InteractableType::weaponDrop) {
+		bool pickedUp{ false };
+		for (int i{}; i < g_WeaponInventorySize; ++i)
+		{
+			if (g_Player.weaponInventory[i].name == "" && !pickedUp)
 			{
-				if (g_Level[i].interactableShort[j].name == interactableToReplace)
-				{
-					g_Level[i].interactableShort[j].name = interactableReplacement;
-				}
+				g_Player.weaponInventory[i] = g_Interactables[index].linkedWeapon;
+				ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name);
+				g_Interactables[index] = placeholder;
+				pickedUp = true;
 			}
+		}
+		if (!pickedUp)
+		{
+			Weapon weaponHolder = g_Player.weaponInventory[g_Player.selectedWeapon];
+			g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[index].linkedWeapon;
+			g_Interactables[index].linkedWeapon = weaponHolder;
+			ReplaceInteractableInRoom(g_CurrentRoom, g_Player.weaponInventory[g_Player.selectedWeapon].name, weaponHolder.name);
 		}
 	}
 }
@@ -1249,6 +1244,10 @@ Enemy InitializeEnemy(std::string enemyName)
 	if (enemyName == "skeleton") {
 		return InitializeEnemy(EnemyType::ranged, "enemy_skeleton", 5.f, 2.f, 0.8f, 10);
 	}
+	if (enemyName == "crate")
+	{
+		return InitializeEnemy(EnemyType::destructible, "crate", 4.0f, 0.0f, 0.0f, 0);
+	}
 	else
 		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
 }
@@ -1302,9 +1301,29 @@ void DrawEnemyHealthBars(Enemy enemyArr[])
 	}
 }
 
+void ClearEnemies()
+{
+	Enemy clearedEnemy{};
+	for (int i{}; i < g_EnemyArrSize; ++i)
+	{
+		g_EnemyArr[i] = clearedEnemy;
+	}
+}
 void DestroyEnemy(Enemy& enemy) 
 {
 	Enemy defaultEnemy{};
+	if (enemy.type == EnemyType::destructible) 
+	{
+		for (int i{}; i < g_MaxEnemiesPerRoom; i++)
+		{
+			EnemyShorthand& targetDestructible{ g_Level[int(g_CurrentRoom.id)].enemyShorthand[i] };
+			if (enemy.dstRect.left == g_CellArr[targetDestructible.location].dstRect.left
+				&& enemy.dstRect.bottom == g_CellArr[targetDestructible.location].dstRect.bottom)
+			{
+				targetDestructible.type = "";
+			}
+		}
+	}
 	enemy = defaultEnemy;
 }
 
@@ -1523,7 +1542,9 @@ void InitializeRooms(Room level[])
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
 	startingRoom.interactableShort[0] = {"basic_sword", 71};
-	startingRoom.interactableShort[1] = {"bow", 72};
+	startingRoom.interactableShort[1] = {"basic_sword", 45};
+	startingRoom.interactableShort[2] = {"bow", 46};
+	startingRoom.interactableShort[3] = {"bow", 72};
 
 	Room& verticalHallway1 = level[1];
 	verticalHallway1.id = RoomID::verticalHallway1;
@@ -1668,6 +1689,7 @@ void LoadRoom(const Room& roomToLoad)
 	// This function will allow us to always retrieve the enemy array etc from any room we're loading by adding said code below
 	std::cout << roomToLoad.layoutToLoad << '\n';
 	ClearInteractables();
+	ClearEnemies();
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
@@ -1698,7 +1720,7 @@ bool CheckRoomCleared(Room& currentRoom)
 	{
 		for (int i{}; i < g_EnemyArrSize; ++i)
 		{
-			if (g_EnemyArr[i].health > 0.f)
+			if (g_EnemyArr[i].health > 0.01f)
 			{
 				return false;
 			}
@@ -1708,14 +1730,7 @@ bool CheckRoomCleared(Room& currentRoom)
 }
 void SetRoomCleared(Room& currentRoom)
 {
-	currentRoom.isCleared = true;
-	for (int j{}; j < g_NrRoomsPerLevel; ++j)
-	{
-		if (g_Level[j].id == currentRoom.id)
-		{
-			g_Level[j].isCleared = true;
-		}
-	}
+	g_Level[int(g_CurrentRoom.id)].isCleared = true;
 }
 #pragma endregion roomHandling
 

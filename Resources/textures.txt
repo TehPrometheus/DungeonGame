@@ -50,3 +50,4 @@
 {arrow_down.png,arrow_down}
 {arrow_left.png,arrow_left}
 {arrow_right.png,arrow_right}
+{crate.png,crate}
