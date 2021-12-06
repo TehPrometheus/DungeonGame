@@ -901,7 +901,8 @@ void UseBow(const Player& player)
 }
 void CycleWeapons(Player& player)
 {
-	if (player.selectedWeapon < g_WeaponInventorySize - 1)
+	if (   player.selectedWeapon < g_WeaponInventorySize - 1 
+		&& player.weaponInventory[player.selectedWeapon + 1].name != "")
 	{
 		++player.selectedWeapon;
 	}
