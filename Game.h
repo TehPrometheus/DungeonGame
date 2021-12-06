@@ -29,6 +29,7 @@ const int g_WeaponInventorySize	{ 3 };
 const int g_WeaponsInGame		{ 10 };
 const int g_InteractablesInGame{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
+const int g_MaxProjectiles      { 20 };
 
 // enums
 enum class GameStates
@@ -46,9 +47,10 @@ enum class EnemyType
 	ranged,
 	boss
 };
-enum class WeaponType 
+enum class WeaponType
 {
-	sword
+	sword,
+	bow
 };
 enum class ItemType
 {
@@ -120,10 +122,12 @@ struct Weapon
 };
 struct Projectile // WORK IN PROGRESS
 {
+	std::string type;
 	float speed;
-	Point2f location;
+	Rectf location;
 	Texture texture;
 	float direction;
+	float damage;
 };
 struct Interactable
 {
@@ -224,6 +228,7 @@ Cell g_CellArr[g_GridSize]{};
 Texture g_Numbers[g_GridSize]{};
 NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
 Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
+Projectile g_Projectiles[g_MaxProjectiles];
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -238,7 +243,8 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_Magenta{ 255 / 255.f, 0 / 255.f, 255 / 255.f , 255 / 255.f },
 				g_Grey{ 204 / 255.f, 204 / 255.f, 204 / 255.f, 255 / 255.f },
 				g_Black{ 0,0,0,1 },
-				g_White{ 1,1,1,1 };
+				g_White{ 1,1,1,1 },
+				g_WhiteTransparent{1.f, 1.f, 1.f, 0.02f};
 
 // Declare your own functions here
 
@@ -280,8 +286,13 @@ void DrawPlayerHealth(const Player& player);
 
 void CycleWeapons(Player& player);
 void UseWeapon(const Player& player);
+void UseBow(const Player& player);
 void UseSword(const Player& player);
 void AttackOnTiles(const Player& player, int indicesToScan[], int indicesAmount);
+
+void DrawReach(const Player& player);
+void DrawSwordReach(const Player& player);
+void DrawBowReach(const Player& player);
 
 void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
 void PickUpInteractable(int index);
@@ -290,6 +301,13 @@ void PickUpInteractable(int index);
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
 Weapon FetchWeapon(const std::string& name);
+
+// Projectile Handling
+void CreateProjectile(Rectf location, std::string type, float direction, float speed, float damage);
+Projectile InitializeProjectile(std::string type, float speed);
+void DrawProjectiles();
+void UpdateProjectiles(float elapsedSec);
+void DestroyProjectile(Projectile& projectile);
 
 // Interactable Handling
 void SpawnInteractable(std::string name, int location);

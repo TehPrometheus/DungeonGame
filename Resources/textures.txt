@@ -45,4 +45,8 @@
 {starting_screen.png,starting_screen}
 {weapon_inventory.png,weapon_inventory}
 {basic_axe.png,basic_axe}
-
+{bow_right.png,bow_right}
+{arrow_up.png,arrow_up}
+{arrow_down.png,arrow_down}
+{arrow_left.png,arrow_left}
+{arrow_right.png,arrow_right}
