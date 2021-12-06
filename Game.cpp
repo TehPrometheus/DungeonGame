@@ -14,6 +14,8 @@ void Start()
 	InitWeapons();
 	InitializeRooms(g_Level);
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
+	InitBoss();
+
 }
 
 void Draw()
@@ -37,6 +39,7 @@ void Draw()
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawInteractables();
 		DrawWeaponInventory(g_Player);
+		DrawBoss();
 		DrawPlayerHealth(g_Player);
 		break;
 	case GameStates::gameOverScreen:
@@ -57,6 +60,8 @@ void Draw()
 
 void Update(float elapsedSec)
 {
+	UpdateBossAnimState(elapsedSec);
+	UpdateBossAIState(elapsedSec);
 	UpdateAnimationPos(elapsedSec, g_Player);
 	UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
@@ -346,7 +351,6 @@ void LoadTexture(const std::string texturePath, NamedTexture& namedTexture, std:
 		std::cout << "Loading of " << name << " texture failed" << std::endl;
 	}
 }
-
 void DeleteTextures()
 {
 	// Delete player textures in player struct
@@ -1212,7 +1216,6 @@ void SpawnEnemies(const EnemyShorthand enemies[])
 		}
 	}
 }
-
 void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize)
 {
 	for (int index{}; index < enemyArrSize; ++index)
@@ -1220,7 +1223,6 @@ void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize)
 		EnemyArr[index].health -= g_Player.weaponInventory[g_Player.selectedWeapon].damageOutput;
 	}
 }
-
 Enemy InitializeEnemy(const EnemyType& type, const std::string& textureName, float maxHealth, float damage, float timePerAction, int viewRange)
 {
 	Enemy enemy{};
@@ -1251,7 +1253,6 @@ Enemy InitializeEnemy(std::string enemyName)
 	else
 		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
 }
-
 void DrawEnemies(Enemy enemyArr[], int arrSize) 
 {
 	for (int index{}; index < arrSize; ++index)
@@ -1295,12 +1296,12 @@ void DrawEnemyHealthBars(Enemy enemyArr[])
 {
 	for (int index{}; index < g_EnemyArrSize; ++index)
 	{
-		if (enemyArr[index].health > 0) {
+		if (enemyArr[index].health > 0) 
+		{
 			DrawEnemyHealth(enemyArr[index]);
 		}
 	}
 }
-
 void ClearEnemies()
 {
 	Enemy clearedEnemy{};
@@ -1314,7 +1315,6 @@ void DestroyEnemy(Enemy& enemy)
 	Enemy defaultEnemy{};
 	enemy = defaultEnemy;
 }
-
 int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize)
 {
 	int index{};
@@ -1457,6 +1457,136 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 		UpdateAnimationPos(elapsedSec, enemyArr[index]);
 	}
 }
+
+// Boss Handling
+void InitBoss()
+{
+	g_Boss.AIState = BossAIStates::idle;
+	g_Boss.animState = AnimStates::idleRight;
+	g_Boss.maxHealth = 50.f;
+	g_Boss.health = g_Boss.maxHealth;
+	g_Boss.damageOutput = 5.f;
+	g_Boss.timeTracker = 0.f;
+	g_Boss.viewRange = 10;
+	g_Boss.chargeEndPoint.x = 0;
+	g_Boss.chargeEndPoint.y = 0;
+	g_Boss.speed = 20.f;
+
+	g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
+	g_Boss.sprite.cols = 4;
+	g_Boss.sprite.frames = 4;
+	g_Boss.sprite.currentFrame = 0;
+	g_Boss.sprite.accumulatedTime = 0.0f;
+	g_Boss.sprite.frameTime = 1 / 8.0f;
+
+	g_Boss.dstRect.bottom = g_CellArr[53].dstRect.bottom;
+	g_Boss.dstRect.left = g_CellArr[53].dstRect.left;
+	g_Boss.dstRect.width = 2 * g_CellArr[53].dstRect.width;
+	g_Boss.dstRect.height = 2 * g_CellArr[53].dstRect.height;
+
+
+	g_Boss.srcRect.width = g_Boss.sprite.texture.width / g_Boss.sprite.cols;
+	g_Boss.srcRect.height = g_Boss.sprite.texture.height;
+	g_Boss.srcRect.bottom = g_Boss.srcRect.height;
+
+}
+
+void DrawBoss()
+{
+	DrawTexture(g_Boss.sprite.texture, g_Boss.dstRect, g_Boss.srcRect);
+}
+
+void ChargeAtPlayer(float elapsedSec)
+{
+	if (BossDistanceToChargePoint() > 1.f)
+	{
+		g_Boss.dstRect.left -= (g_Boss.delta.x / 1.f) * elapsedSec;
+		g_Boss.dstRect.bottom -= (g_Boss.delta.y / 1.f) * elapsedSec;
+	}
+	else
+	{
+		g_Boss.AIState = BossAIStates::idle;
+		g_Boss.timeTracker = 0;
+	}
+
+}
+float BossDistanceToChargePoint()
+{
+	return sqrt(powf(g_Boss.dstRect.left - g_Boss.chargeEndPoint.x,2)+ powf(g_Boss.dstRect.bottom - g_Boss.chargeEndPoint.y , 2));
+}
+void UpdateBossAIState(float elapsedSec)
+{
+	g_Boss.timeTracker += elapsedSec;
+	float decisionTime{ 2.f }; // The time the boss takes to make a decision. Each decision corresponds to an AIState.
+
+	switch (g_Boss.AIState)
+	{
+		case BossAIStates::idle :
+		{
+			g_Boss.animState = AnimStates::idleRight;
+			if (g_Boss.timeTracker > decisionTime)
+			{
+				g_Boss.AIState = BossAIStates::charge;
+				g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
+				g_Boss.delta.y = g_Boss.dstRect.bottom - g_Player.dstRect.bottom;
+				g_Boss.chargeEndPoint.x = g_Player.dstRect.left;
+				g_Boss.chargeEndPoint.y = g_Player.dstRect.bottom;
+				g_Boss.chargeStartPoint.x = g_Boss.dstRect.left;
+				g_Boss.chargeStartPoint.y = g_Boss.dstRect.bottom;
+
+				g_Boss.timeTracker = 0; 
+			}
+			break;
+		}
+
+		case BossAIStates::charge:
+		{
+			g_Boss.animState = AnimStates::runRight;
+			ChargeAtPlayer(elapsedSec);
+			break;
+		}
+
+		case BossAIStates::basicAttack :
+		{
+
+			break;
+		}
+	}
+
+}
+
+void UpdateBossAnimState(float elapsedSec)
+{
+	switch (g_Boss.animState)
+	{
+		case AnimStates::idleRight:
+		{
+			g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
+			g_Boss.sprite.accumulatedTime += elapsedSec;
+			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			{
+				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
+				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+			}	
+			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			break;
+		}
+		case AnimStates::runRight:
+		{
+			g_Boss.sprite.texture = FetchTexture("boss_anim_run_right");
+			g_Boss.sprite.accumulatedTime += elapsedSec;
+			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			{
+				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
+				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+			}
+			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			break;
+		}
+	}
+}
+
+
 #pragma endregion enemyHandling
 
 #pragma region roomHandling
@@ -1623,8 +1753,8 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
-	g_CurrentRoom = level[0];
-	LoadRoom(level[0]);
+	g_CurrentRoom = level[14];
+	LoadRoom(level[14]);
 }
 
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
