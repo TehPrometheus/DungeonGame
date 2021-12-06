@@ -45,4 +45,5 @@
 {starting_screen.png,starting_screen}
 {weapon_inventory.png,weapon_inventory}
 {basic_axe.png,basic_axe}
-
+{boss_anim_idle_right.png,boss_anim_idle_right}
+{boss_anim_run_right.png,boss_anim_run_right}

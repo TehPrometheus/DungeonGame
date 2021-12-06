@@ -43,8 +43,7 @@ enum class EnemyType
 {
 	basic,
 	strong,
-	ranged,
-	boss
+	ranged
 };
 enum class WeaponType 
 {
@@ -98,7 +97,12 @@ enum class RoomID
 	pickupRoom3,
 	bossRoom
 };
-
+enum class BossAIStates
+{
+	idle,
+	basicAttack,
+	charge
+};
 // structs
 struct Cell
 {
@@ -170,6 +174,23 @@ struct Enemy
 	float damageOutput;
 	int viewRange;
 };
+struct Boss
+{
+	Rectf dstRect;
+	Rectf srcRect;
+	Sprite sprite;
+	BossAIStates AIState;
+	AnimStates animState;
+	Point2f delta;
+	Point2f chargeEndPoint;
+	Point2f chargeStartPoint;
+	float speed;
+	float health;
+	float maxHealth;
+	float damageOutput;
+	float timeTracker;
+	int viewRange;
+};
 struct EnemyShorthand
 {
 	std::string type;
@@ -201,8 +222,8 @@ struct Level
 
 Room g_Level[15];
 Room g_CurrentRoom{};
-
-GameStates g_Game{ GameStates::startScreen };
+Boss g_Boss{};
+GameStates g_Game{ GameStates::playing };
 Weapon g_Weapons[g_WeaponsInGame]{};
 Interactable g_Interactables[g_InteractablesInGame]{};
 Enemy g_EnemyArr[g_EnemyArrSize]{};
@@ -305,6 +326,16 @@ void DestroyEnemy(Enemy& enemy);
 void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
 void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize);
+
+// Boss Handling
+void InitBoss();
+void DrawBoss();
+void UpdateBossAnimState(float elapsedSec);
+void UpdateBossAIState(float elapsedSec);
+void ChargeAtPlayer(float elapsedSec);
+float BossDistanceToChargePoint();
+
+
 
 // Input Handling
 void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite Sprites[], float elapsedSec);
