@@ -11,15 +11,9 @@ void Start()
 {
 	// initialize game resources here
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
-	InitializeRooms(g_Level);
-	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	InitWeapons();
+	InitializeRooms(g_Level);
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
-	SpawnInteractable("basic_sword", 71);
-	SpawnInteractable("basic_axe", 45);
-	SpawnInteractable("basic_sword", 70);
-	SpawnInteractable("basic_sword", 72);
-	// InitEnemies(g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 }
 
 void Draw()
@@ -814,7 +808,7 @@ void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& curre
 }
 void PickUpInteractable(int index)
 {
-	Interactable nullInteractable{};
+	Interactable placeholder{};
 	if (g_Interactables[index].type == InteractableType::weaponDrop) {
 		bool pickedUp{ false };
 		for (int i{}; i < g_WeaponInventorySize; ++i)
@@ -822,16 +816,18 @@ void PickUpInteractable(int index)
 			if (g_Player.weaponInventory[i].name == "" && !pickedUp)
 			{
 				g_Player.weaponInventory[i] = g_Interactables[index].linkedWeapon;
-				g_Interactables[index] = nullInteractable;
+				ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name);
+				g_Interactables[index] = placeholder;
 				pickedUp = true;
 			}
 		}
 		if (!pickedUp)
 		{
-			nullInteractable = g_Interactables[index];
-			nullInteractable.linkedWeapon = g_Player.weaponInventory[g_Player.selectedWeapon];
+			placeholder = g_Interactables[index];
+			placeholder.linkedWeapon = g_Player.weaponInventory[g_Player.selectedWeapon];
 			g_Player.weaponInventory[g_Player.selectedWeapon] = g_Interactables[index].linkedWeapon;
-			g_Interactables[index] = nullInteractable;
+			ReplaceInteractableInRoom(g_CurrentRoom, g_Interactables[index].name, placeholder.name);
+			g_Interactables[index] = placeholder;
 		}
 	}
 }
@@ -929,6 +925,30 @@ void SpawnInteractable(std::string name, int location)
 		}
 	}
 }
+void SpawnInteractablesInRoom(const Room & room)
+{
+	for (int i{}; i < g_MaxInteractablesRoom; ++i)
+		if (room.interactableShort[i].name != "") {
+			SpawnInteractable(room.interactableShort[i].name, room.interactableShort[i].location);
+		}
+}
+void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement)
+{
+	for (int i{}; i < g_NrRoomsPerLevel; ++i)
+	{
+		if (room.id == g_Level[i].id)
+		{
+			for (int j{}; j < g_MaxInteractablesRoom; ++j)
+			{
+				if (g_Level[i].interactableShort[j].name == interactableToReplace)
+				{
+					g_Level[i].interactableShort[j].name = interactableReplacement;
+				}
+			}
+		}
+	}
+}
+
 Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type)
 {
 	Interactable initializedInteractable{};
@@ -1300,6 +1320,8 @@ void InitializeRooms(Room level[])
 	startingRoom.topDoorDestination = RoomID::verticalHallway1;
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
+	startingRoom.interactableShort[0] = {"basic_sword", 71};
+	startingRoom.interactableShort[1] = {"basic_axe", 45};
 
 	Room& verticalHallway1 = level[1];
 	verticalHallway1.id = RoomID::verticalHallway1;
@@ -1447,6 +1469,7 @@ void LoadRoom(const Room& roomToLoad)
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
+	SpawnInteractablesInRoom(roomToLoad);
 	if (!roomToLoad.isCleared) {
 		SpawnEnemies(roomToLoad.enemyShorthand);
 	}

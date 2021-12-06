@@ -118,6 +118,13 @@ struct Weapon
 	WeaponType type{};
 	float damageOutput{};
 };
+struct Projectile // WORK IN PROGRESS
+{
+	float speed;
+	Point2f location;
+	Texture texture;
+	float direction;
+};
 struct Interactable
 {
 	std::string name;
@@ -126,6 +133,12 @@ struct Interactable
 	Item linkedItem;
 	Rectf dstRect;
 	int location;
+	bool pickedUp{ false };
+};
+struct InteractableShorthand
+{
+	std::string name;
+	int location{};
 	bool pickedUp{ false };
 };
 struct Sprite
@@ -190,7 +203,7 @@ struct Room
 	RoomID bottomDoorDestination{};
 	RoomID rightDoorDestination{};
 	EnemyShorthand enemyShorthand[g_MaxEnemiesPerRoom];
-	Interactable interactables[g_MaxInteractablesRoom];
+	InteractableShorthand interactableShort[g_MaxInteractablesRoom];
 	bool isCleared{ false };
 };
 struct Level
@@ -202,7 +215,7 @@ struct Level
 Room g_Level[15];
 Room g_CurrentRoom{};
 
-GameStates g_Game{ GameStates::startScreen };
+GameStates g_Game{ GameStates::playing };
 Weapon g_Weapons[g_WeaponsInGame]{};
 Interactable g_Interactables[g_InteractablesInGame]{};
 Enemy g_EnemyArr[g_EnemyArrSize]{};
@@ -280,6 +293,9 @@ Weapon FetchWeapon(const std::string& name);
 
 // Interactable Handling
 void SpawnInteractable(std::string name, int location);
+void SpawnInteractablesInRoom(const Room& room);
+void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement);
+
 Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type);
 void DrawInteractables();
 void ClearInteractables();
