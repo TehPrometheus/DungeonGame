@@ -34,6 +34,7 @@ void Draw()
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawInteractables();
+		DrawProjectiles();
 		DrawWeaponInventory(g_Player);
 		DrawPlayerHealth(g_Player);
 		break;
@@ -60,6 +61,7 @@ void Update(float elapsedSec)
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
 	ProcessAnimState(g_Player, g_PlayerSprites);
 	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
+	UpdateProjectiles(elapsedSec);
 	if (CheckRoomCleared(g_CurrentRoom)) 
 	{
 		SetRoomCleared(g_CurrentRoom);
@@ -580,14 +582,18 @@ void UpdateAnimationPos(float elapsedSec, Player& player)
 
 void DrawWeaponInventory(const Player& player)
 {
+	const float slotSize{ 64.f };
 	Texture weaponInv{ FetchTexture("weapon_inventory") };
-	Rectf origin{0, g_WindowHeight, weaponInv.width, weaponInv.height };
+	Rectf origin{slotSize/2, (g_WindowHeight - weaponInv.height)/2, weaponInv.width, weaponInv.height };
 	DrawTexture(weaponInv, origin);
 	for (int index{}; index < g_WeaponInventorySize; ++index)
 	{
-		const float slotHeight{ 64.f };
 		const float border{2.0f};
-		Rectf location{ origin.left + slotHeight + border, origin.bottom - (index + 2) * (slotHeight + border), slotHeight, slotHeight };
+		Rectf location{};
+		location.left = origin.left + slotSize + border;
+		location.bottom = origin.bottom + weaponInv.height - (index + 2) * (slotSize + border);
+		location.width = slotSize;
+		location.height = slotSize;
 		SetColor(g_White);
 		DrawRect(location);
 		DrawTexture(player.weaponInventory[index].texture, location);
@@ -837,6 +843,10 @@ void UseWeapon(const Player& player)
 	{
 		UseSword(player);
 	}
+	else if (player.weaponInventory[player.selectedWeapon].type == WeaponType::bow)
+	{
+		UseBow(player);
+	}
 }
 void UseSword(const Player& player)
 {
@@ -865,6 +875,10 @@ void UseSword(const Player& player)
 		AttackOnTiles(player, tilesToScan, tilesAmount);
 	}
 }
+void UseBow(const Player& player)
+{
+	CreateProjectile(player.dstRect, "arrow", 0.0f);
+}
 void CycleWeapons(Player& player)
 {
 	if (player.selectedWeapon < g_WeaponInventorySize - 1)
@@ -878,12 +892,57 @@ void CycleWeapons(Player& player)
 }
 #pragma endregion playerInputHandling
 
+void CreateProjectile(Rectf location, std::string type, float direction)
+{
+	bool foundEmpty{ false };
+	int emptyIndex{};
+	for (int i{}; i < g_MaxProjectiles; ++i)
+	{
+		if (!foundEmpty && g_Projectiles[i].type == "")
+		{
+			emptyIndex = i;
+			foundEmpty = true;
+		}
+	}
+	if (foundEmpty)
+	{
+		g_Projectiles[emptyIndex] = InitializeProjectile("arrow", 50.f);
+		g_Projectiles[emptyIndex].location = location;
+		g_Projectiles[emptyIndex].location.width = g_Projectiles[emptyIndex].texture.width;
+		g_Projectiles[emptyIndex].location.height = g_Projectiles[emptyIndex].texture.height;
+		g_Projectiles[emptyIndex].direction = direction;
+	}
+}
+Projectile InitializeProjectile(std::string type, float speed)
+{
+	Projectile projectile{};
+	projectile.texture = FetchTexture("arrow1"); // FOR TESTING PURPOSES
+	projectile.type = type;
+	projectile.speed = speed;
+	return projectile;
+}
+void DrawProjectiles()
+{
+	for (int i{}; i < g_MaxProjectiles; ++i)
+	{
+		DrawTexture(g_Projectiles[i].texture, g_Projectiles[i].location);
+	}
+}
+
+void UpdateProjectiles(float elapsedSec)
+{
+	for (int i{}; i < g_MaxProjectiles; ++i)
+	{
+		g_Projectiles[i].location.bottom += sinf(g_Projectiles[i].direction) * g_Projectiles[i].speed;
+		g_Projectiles[i].location.left += cosf(g_Projectiles[i].direction) * g_Projectiles[i].speed;
+	}
+}
 #pragma region weaponHandling
 // Weapon Handling
 void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.0f);
-	g_Weapons[1] = InitializeWeapon("basic_axe", "basic_axe", WeaponType::sword, 4.0f);
+	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1321,7 +1380,7 @@ void InitializeRooms(Room level[])
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
 	startingRoom.interactableShort[0] = {"basic_sword", 71};
-	startingRoom.interactableShort[1] = {"basic_axe", 45};
+	startingRoom.interactableShort[1] = {"bow", 72};
 
 	Room& verticalHallway1 = level[1];
 	verticalHallway1.id = RoomID::verticalHallway1;

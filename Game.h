@@ -29,6 +29,7 @@ const int g_WeaponInventorySize	{ 3 };
 const int g_WeaponsInGame		{ 10 };
 const int g_InteractablesInGame{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
+const int g_MaxProjectiles      { 20 };
 
 // enums
 enum class GameStates
@@ -46,9 +47,10 @@ enum class EnemyType
 	ranged,
 	boss
 };
-enum class WeaponType 
+enum class WeaponType
 {
-	sword
+	sword,
+	bow
 };
 enum class ItemType
 {
@@ -120,8 +122,9 @@ struct Weapon
 };
 struct Projectile // WORK IN PROGRESS
 {
+	std::string type;
 	float speed;
-	Point2f location;
+	Rectf location;
 	Texture texture;
 	float direction;
 };
@@ -224,6 +227,7 @@ Cell g_CellArr[g_GridSize]{};
 Texture g_Numbers[g_GridSize]{};
 NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
 Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
+Projectile g_Projectiles[g_MaxProjectiles];
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -280,6 +284,7 @@ void DrawPlayerHealth(const Player& player);
 
 void CycleWeapons(Player& player);
 void UseWeapon(const Player& player);
+void UseBow(const Player& player);
 void UseSword(const Player& player);
 void AttackOnTiles(const Player& player, int indicesToScan[], int indicesAmount);
 
@@ -290,6 +295,12 @@ void PickUpInteractable(int index);
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
 Weapon FetchWeapon(const std::string& name);
+
+// Projectile Handling
+void CreateProjectile(Rectf location, std::string type, float direction);
+Projectile InitializeProjectile(std::string type, float speed);
+void DrawProjectiles();
+void UpdateProjectiles(float elapsedSec);
 
 // Interactable Handling
 void SpawnInteractable(std::string name, int location);
