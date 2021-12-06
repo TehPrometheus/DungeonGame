@@ -1117,7 +1117,8 @@ void ReplaceInteractableInRoom(const Room& room, std::string interactableToRepla
 	bool replaced{ false };
 	for (int j{}; j < g_MaxInteractablesRoom; ++j)
 	{
-		if (g_Level[int(room.id)].interactableShort[j].name == interactableToReplace && !replaced)
+		if (g_Level[int(room.id)].interactableShort[j].name == interactableToReplace &&
+			g_Level[int(room.id)].interactableShort[j].location == location)
 		{
 			g_Level[int(room.id)].interactableShort[j].name = interactableReplacement;
 			replaced = true;
@@ -1753,8 +1754,8 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
-	g_CurrentRoom = level[14];
-	LoadRoom(level[14]);
+	g_CurrentRoom = level[0];
+	LoadRoom(level[0]);
 }
 
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
