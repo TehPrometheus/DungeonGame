@@ -47,3 +47,9 @@
 {basic_axe.png,basic_axe}
 {boss_anim_idle_right.png,boss_anim_idle_right}
 {boss_anim_run_right.png,boss_anim_run_right}
+{bow_right.png,bow_right}
+{arrow_up.png,arrow_up}
+{arrow_down.png,arrow_down}
+{arrow_left.png,arrow_left}
+{arrow_right.png,arrow_right}
+{crate.png,crate}
