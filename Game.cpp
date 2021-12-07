@@ -2022,6 +2022,9 @@ void InitializeRooms(Room level[])
 	pickupRoom2.id = RoomID::pickupRoom2;
 	pickupRoom2.layoutToLoad = "pickup_room_2.room";
 	pickupRoom2.bottomDoorDestination = RoomID::verticalHallway2;
+	pickupRoom2.interactableShort[0] = { "strength_potion", GetIndex(6,4), InteractableType::itemDrop };
+	pickupRoom2.interactableShort[1] = { "health_potion", GetIndex(2,6), InteractableType::itemDrop };
+	pickupRoom2.interactableShort[2] = { "speed_potion", GetIndex(6,8), InteractableType::itemDrop };
 
 	Room& horizontalHallway1 = level[5];
 	horizontalHallway1.id = RoomID::horizontalHallway1;
@@ -2034,6 +2037,9 @@ void InitializeRooms(Room level[])
 	combatRoom2.layoutToLoad = "combat_room_2.room";
 	combatRoom2.leftDoorDestination = RoomID::horizontalHallway1;
 	combatRoom2.rightDoorDestination = RoomID::horizontalHallway2;
+	combatRoom2.enemyShorthand[0] = { "zombie", GetIndex(2,6) };
+	combatRoom2.enemyShorthand[1] = { "zombie", GetIndex(4,8) };
+	combatRoom2.enemyShorthand[2] = { "zombie", GetIndex(6,6) };
 
 	Room& horizontalHallway2 = level[7];
 	horizontalHallway2.id = RoomID::horizontalHallway2;
@@ -2046,8 +2052,6 @@ void InitializeRooms(Room level[])
 	pickupRoom1.layoutToLoad = "pickup_room_1.room";
 	pickupRoom1.leftDoorDestination = RoomID::horizontalHallway2;
 	pickupRoom1.enemyShorthand[0] = { "archer", 46 };
-	// pickupRoom1.enemyShorthand[1] = { "zombie", 45 };
-	// pickupRoom1.enemyShorthand[2] = { "zombie", 71 };
 	pickupRoom1.interactableShort[0] = { "bow", 58, InteractableType::weaponDrop };
 
 	Room& horizontalHallway3 = level[9];
