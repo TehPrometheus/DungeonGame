@@ -1180,6 +1180,7 @@ void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.5f);
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
+	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe", WeaponType::sword, 3.5f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1293,18 +1294,23 @@ Item FetchItem(const std::string& name)
 }
 void RollForDrop(Enemy& enemy)
 {
-	int dieRoll{ rand() % 20 };
-	if (dieRoll == 0)
+	int location{ GetEnemyGridIndex(enemy, g_CellArr, g_GridSize) };
+	int dieRoll{ rand() % 200 };
+	if (dieRoll < 9)
 	{
-		SpawnInteractable("health_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+		SpawnInteractable("health_potion", location, InteractableType::itemDrop);
 	}
-	else if (dieRoll == 1)
+	else if (dieRoll < 19)
 	{
-		SpawnInteractable("strength_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+		SpawnInteractable("strength_potion", location, InteractableType::itemDrop);
 	}
-	else if (dieRoll == 2)
+	else if (dieRoll < 29)
 	{
-		SpawnInteractable("speed_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+		SpawnInteractable("speed_potion", location, InteractableType::itemDrop);
+	}
+	else if (dieRoll < 32)
+	{
+		SpawnInteractable("basic_axe", location, InteractableType::weaponDrop);
 	}
 }
 #pragma endregion itemHandling
