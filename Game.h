@@ -20,7 +20,7 @@ const int g_GridSize			{ g_NrRows * g_NrCols };
 const int g_TexturesSize		{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
 const int g_EnemyArrSize		{ 12 };
 const int g_MaxEnemiesPerRoom   { 10 };
-const int g_MaxInteractablesRoom{ 5 };
+const int g_MaxInteractablesRoom{ 10 };
 const int g_NrRoomsPerLevel		{ 15 }; // Careful with this aswell
 const int g_RoomArrSize			{ 10 }; 
 const int g_ItemInventorySize	{ 5 };
@@ -350,6 +350,7 @@ void InitItems();
 Item InitializeItem(const std::string& itemName, const std::string& textureName, const ItemType& type, const EffectType effect, const float duration = 0.01f, const float modifier = 1.0f);
 void UpdateStatusEffects(float elapsedSec);
 void RollForDrop(Enemy& enemy);
+
 // Weapons Handling
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
@@ -367,6 +368,7 @@ void SpawnInteractable(std::string name, int location, InteractableType type);
 void SpawnInteractablesInRoom(const Room& room);
 void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement, int location);
 void SetInteractablePickedUp(const Room& room, std::string interactableName, int location);
+void AddInteractableToRoom(const Room& room, std::string interactableName, int location, InteractableType type);
 
 Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type);
 void DrawInteractables();
