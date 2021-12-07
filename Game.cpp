@@ -1413,7 +1413,7 @@ void RollForDrop(Enemy& enemy)
 		itemToSpawn = "regen_potion";
 		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll < 200)
+	else if (dieRoll < 52)
 	{
 		itemToSpawn = "shield_potion";
 		type = InteractableType::itemDrop;
