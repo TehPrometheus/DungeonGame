@@ -27,7 +27,7 @@ const int g_ItemInventorySize	{ 5 };
 const int g_ItemsInGame			{ 10 };
 const int g_WeaponInventorySize	{ 3 };
 const int g_WeaponsInGame		{ 10 };
-const int g_InteractablesInGame{ g_WeaponsInGame + g_ItemsInGame };
+const int g_InteractablesInGame	{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
 const int g_MaxProjectiles      { 20 };
 
@@ -44,7 +44,8 @@ enum class EnemyType
 {
 	basic,
 	ranged,
-	destructible
+	destructible,
+	boss
 };
 enum class WeaponType
 {
@@ -258,6 +259,7 @@ struct Level
 };
 
 
+
 Room g_Level[15];
 Room g_CurrentRoom{};
 Boss g_Boss{};
@@ -272,6 +274,7 @@ Texture g_Numbers[g_GridSize]{};
 NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
 Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
 Projectile g_Projectiles[g_MaxProjectiles]{};
+
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -404,6 +407,7 @@ void UpdateBossAnimState(float elapsedSec);
 void UpdateBossAIState(float elapsedSec);
 void ChargeAtPlayer(float elapsedSec);
 float BossDistanceToChargePoint();
+bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
 
 
 
