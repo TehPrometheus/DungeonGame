@@ -349,7 +349,7 @@ void PickUpInteractable(int index, int location);
 void InitItems();
 Item InitializeItem(const std::string& itemName, const std::string& textureName, const ItemType& type, const EffectType effect, const float duration = 0.01f, const float modifier = 1.0f);
 void UpdateStatusEffects(float elapsedSec);
-
+void RollForDrop(Enemy& enemy);
 // Weapons Handling
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);

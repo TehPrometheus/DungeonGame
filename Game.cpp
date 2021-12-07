@@ -1291,7 +1291,24 @@ Item FetchItem(const std::string& name)
 	Item no_item{};
 	return no_item;
 }
+void RollForDrop(Enemy& enemy)
+{
+	int dieRoll{ rand() % 20 };
+	if (dieRoll == 0)
+	{
+		SpawnInteractable("health_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+	}
+	else if (dieRoll == 1)
+	{
+		SpawnInteractable("strength_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+	}
+	else if (dieRoll == 2)
+	{
+		SpawnInteractable("speed_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+	}
+}
 #pragma endregion itemHandling
+
 #pragma region interactableHandling
 // Interactable Handling
 void SpawnInteractable(std::string name, int location, InteractableType type)
@@ -1749,12 +1766,14 @@ void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDif
 		CreateProjectile(spawnRect, "arrow_up", angle, projectileSpeed, enemy.damageOutput);
 	}
 }
+
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize)
 {
 	for (int index{}; index < enemyArrSize; ++index)
 	{
 		if (enemyArr[index].health <= 0.f && enemyArr[index].maxHealth != 0)
 		{ 
+			RollForDrop(enemyArr[index]);
 			DestroyEnemy(enemyArr[index]);
 		} 
 		else if (enemyArr[index].type == EnemyType::basic)
