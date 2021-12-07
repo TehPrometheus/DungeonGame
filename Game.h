@@ -27,7 +27,7 @@ const int g_ItemInventorySize	{ 5 };
 const int g_ItemsInGame			{ 10 };
 const int g_WeaponInventorySize	{ 3 };
 const int g_WeaponsInGame		{ 10 };
-const int g_InteractablesInGame{ g_WeaponsInGame + g_ItemsInGame };
+const int g_InteractablesInGame	{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
 const int g_MaxProjectiles      { 20 };
 
@@ -44,7 +44,8 @@ enum class EnemyType
 {
 	basic,
 	ranged,
-	destructible
+	destructible,
+	boss
 };
 enum class WeaponType
 {
@@ -237,19 +238,19 @@ struct Level
 };
 
 
-Room g_Level[15];
-Room g_CurrentRoom{};
-Boss g_Boss{};
-GameStates g_Game{ GameStates::playing };
-Weapon g_Weapons[g_WeaponsInGame]{};
-Interactable g_Interactables[g_InteractablesInGame]{};
-Enemy g_EnemyArr[g_EnemyArrSize]{};
-Player g_Player{};
-Cell g_CellArr[g_GridSize]{};
-Texture g_Numbers[g_GridSize]{};
-NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
-Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
-Projectile g_Projectiles[g_MaxProjectiles];
+Boss			g_Boss									{};
+Room			g_Level[15]								{};
+Room			g_CurrentRoom							{};
+Cell			g_CellArr[g_GridSize]					{};
+Enemy			g_EnemyArr[g_EnemyArrSize]				{};
+Player			g_Player								{};
+Weapon			g_Weapons[g_WeaponsInGame]				{};
+Sprite			g_PlayerSprites[g_PlayerSpritesSize]	{};
+Texture			g_Numbers[g_GridSize]					{};
+Projectile		g_Projectiles[g_MaxProjectiles]			{};
+NamedTexture	g_NamedTexturesArr[g_TexturesSize]		{};
+Interactable	g_Interactables[g_InteractablesInGame]	{};
+GameStates		g_Game						{ GameStates::playing };
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -370,6 +371,7 @@ void UpdateBossAnimState(float elapsedSec);
 void UpdateBossAIState(float elapsedSec);
 void ChargeAtPlayer(float elapsedSec);
 float BossDistanceToChargePoint();
+bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
 
 
 

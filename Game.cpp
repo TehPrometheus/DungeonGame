@@ -39,8 +39,8 @@ void Draw()
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawInteractables();
 		DrawWeaponInventory(g_Player);
-		DrawBoss();
 		DrawPlayerHealth(g_Player);
+		DrawBoss();
 		break;
 	case GameStates::gameOverScreen:
 		DrawEndScreen();
@@ -257,6 +257,21 @@ bool IsPointInRect(const Rectf& rectangle, const Point2f& point)
 	return false;
 
 }
+bool IsOverlapping(const Rectf& rectangle1, const Rectf& rectangle2)
+{
+	if (rectangle1.left >= rectangle2.left + rectangle2.width || rectangle2.left >= rectangle1.left + rectangle1.width)
+	{
+		return false;
+	}
+
+	if (rectangle1.bottom >= rectangle2.bottom + rectangle2.height || rectangle2.bottom >= rectangle1.bottom + rectangle1.height)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 #pragma endregion utilFunctions
 
 #pragma region textureHandling
@@ -641,7 +656,9 @@ void DrawPlayerHealth(const Player& player)
 	}
 }
 
-void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
+void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) 
+{
+	// Lower enemy health
 	for (int currentTile{}; currentTile < tilesAmount; ++currentTile)
 	{
 		for (int index{}; index < g_EnemyArrSize; ++index)
@@ -658,6 +675,13 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount) {
 				}
 			}
 		}
+
+	// Lower Boss health
+		if (IsBossOnTilesToScan(g_Boss, tilesToScan, currentTile))
+		{
+			g_Boss.health -= player.weaponInventory[player.selectedWeapon].damageOutput;
+		}
+		
 	}
 }
 #pragma endregion playerHandling
@@ -1249,7 +1273,7 @@ Enemy InitializeEnemy(std::string enemyName)
 	if (enemyName == "crate")
 	{
 		return InitializeEnemy(EnemyType::destructible, "crate", 4.0f, 0.0f, 0.0f, 0);
-	}
+	}	
 	else
 		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
 }
@@ -1502,12 +1526,23 @@ void InitBoss()
 	g_Boss.srcRect.bottom = g_Boss.srcRect.height;
 
 }
-
+void DrawBossHealth()
+{
+	if (g_Boss.health != g_Boss.maxHealth)
+	{
+		DrawHealthBar(g_Boss.dstRect, g_Boss.health, g_Boss.maxHealth);
+	}
+}
 void DrawBoss()
 {
+	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	DrawBossHealth();
 	DrawTexture(g_Boss.sprite.texture, g_Boss.dstRect, g_Boss.srcRect);
 }
-
+float BossDistanceToChargePoint()
+{
+	return sqrt(powf(g_Boss.dstRect.left - g_Boss.chargeEndPoint.x,2)+ powf(g_Boss.dstRect.bottom - g_Boss.chargeEndPoint.y , 2));
+}
 void ChargeAtPlayer(float elapsedSec)
 {
 	if (BossDistanceToChargePoint() > 1.f)
@@ -1522,12 +1557,10 @@ void ChargeAtPlayer(float elapsedSec)
 	}
 
 }
-float BossDistanceToChargePoint()
-{
-	return sqrt(powf(g_Boss.dstRect.left - g_Boss.chargeEndPoint.x,2)+ powf(g_Boss.dstRect.bottom - g_Boss.chargeEndPoint.y , 2));
-}
 void UpdateBossAIState(float elapsedSec)
 {
+	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+
 	g_Boss.timeTracker += elapsedSec;
 	float decisionTime{ 2.f }; // The time the boss takes to make a decision. Each decision corresponds to an AIState.
 
@@ -1566,14 +1599,16 @@ void UpdateBossAIState(float elapsedSec)
 	}
 
 }
-
 void UpdateBossAnimState(float elapsedSec)
 {
+	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+
 	switch (g_Boss.animState)
 	{
 		case AnimStates::idleRight:
 		{
 			g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
+			g_Boss.sprite.frameTime = 1 / 6.0f;
 			g_Boss.sprite.accumulatedTime += elapsedSec;
 			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
 			{
@@ -1586,6 +1621,7 @@ void UpdateBossAnimState(float elapsedSec)
 		case AnimStates::runRight:
 		{
 			g_Boss.sprite.texture = FetchTexture("boss_anim_run_right");
+			g_Boss.sprite.frameTime = 1 / 20.0f;
 			g_Boss.sprite.accumulatedTime += elapsedSec;
 			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
 			{
@@ -1596,6 +1632,11 @@ void UpdateBossAnimState(float elapsedSec)
 			break;
 		}
 	}
+}
+bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile)
+{
+	Rectf tile{ g_CellArr[tilesToScan[currentTile]].dstRect };
+	return IsOverlapping(g_Boss.dstRect, tile);
 }
 
 
@@ -1765,10 +1806,9 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
-	g_CurrentRoom = level[14];
-	LoadRoom(level[14]);
+	g_CurrentRoom = level[0];
+	LoadRoom(level[0]);
 }
-
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
 {
 	const int topDoor{ 6 };
