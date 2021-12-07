@@ -106,6 +106,14 @@ enum class BossAIStates
 	basicAttack,
 	charge
 };
+enum class EffectType
+{
+	none,
+	health,
+	regeneration,
+	speedBoost,
+	strengthBoost
+};
 // structs
 struct Cell
 {
@@ -113,10 +121,20 @@ struct Cell
 	Texture texture;
 	bool isObstacle{false};
 };
+struct StatusEffect
+{
+	EffectType effectType;
+	float duration;
+	float timeRemaining;
+	float modifier;
+};
 struct Item
 {
 	std::string name;
+	Texture texture;
 	ItemType type;
+	StatusEffect effect;
+	int count;
 };
 struct Weapon
 {
@@ -142,12 +160,13 @@ struct Interactable
 	Item linkedItem;
 	Rectf dstRect;
 	int location;
-	bool pickedUp{ false };
+	bool pickedUp{ true };
 };
 struct InteractableShorthand
 {
 	std::string name;
 	int location{};
+	InteractableType type;
 	bool pickedUp{ false };
 };
 struct Sprite
@@ -178,6 +197,8 @@ struct Player
 
 	Weapon weaponInventory[g_WeaponInventorySize];
 	int selectedWeapon;
+
+	StatusEffect effects[g_ItemInventorySize];
 };
 struct Enemy
 {
@@ -238,19 +259,22 @@ struct Level
 };
 
 
-Boss			g_Boss									{};
-Room			g_Level[15]								{};
-Room			g_CurrentRoom							{};
-Cell			g_CellArr[g_GridSize]					{};
-Enemy			g_EnemyArr[g_EnemyArrSize]				{};
-Player			g_Player								{};
-Weapon			g_Weapons[g_WeaponsInGame]				{};
-Sprite			g_PlayerSprites[g_PlayerSpritesSize]	{};
-Texture			g_Numbers[g_GridSize]					{};
-Projectile		g_Projectiles[g_MaxProjectiles]			{};
-NamedTexture	g_NamedTexturesArr[g_TexturesSize]		{};
-Interactable	g_Interactables[g_InteractablesInGame]	{};
-GameStates		g_Game						{ GameStates::playing };
+
+Room g_Level[15];
+Room g_CurrentRoom{};
+Boss g_Boss{};
+GameStates g_Game{ GameStates::playing };
+Weapon g_Weapons[g_WeaponsInGame]{};
+Item g_Items[g_ItemsInGame]{};
+Interactable g_Interactables[g_InteractablesInGame]{};
+Enemy g_EnemyArr[g_EnemyArrSize]{};
+Player g_Player{};
+Cell g_CellArr[g_GridSize]{};
+Texture g_Numbers[g_GridSize]{};
+NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
+Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
+Projectile g_Projectiles[g_MaxProjectiles]{};
+
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -302,11 +326,16 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[]);
 void DrawPlayer(const Player& player, Sprite Sprites[]);
 void UpdateAnimationPos(float elapsedSec, Player& player);
 
+void DrawItemInventory(const Player& player);
 void DrawWeaponInventory(const Player& player);
+
 void DrawHealthBar(Rectf entityRect, float health, float maxHealth);
 void DrawPlayerHealth(const Player& player);
 
 void CycleWeapons(Player& player);
+
+void UseItem(Player& player, int itemslot);
+
 void UseWeapon(const Player& player);
 void UseBow(const Player& player);
 void UseSword(const Player& player);
@@ -317,8 +346,13 @@ void DrawSwordReach(const Player& player);
 void DrawBowReach(const Player& player);
 
 void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
-void PickUpInteractable(int index);
+void PickUpInteractable(int index, int location);
 
+// Item Handling
+void InitItems();
+Item InitializeItem(const std::string& itemName, const std::string& textureName, const ItemType& type, const EffectType effect, const float duration = 0.01f, const float modifier = 1.0f);
+void UpdateStatusEffects(float elapsedSec);
+void RollForDrop(Enemy& enemy);
 // Weapons Handling
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
@@ -332,9 +366,10 @@ void UpdateProjectiles(float elapsedSec);
 void DestroyProjectile(Projectile& projectile);
 
 // Interactable Handling
-void SpawnInteractable(std::string name, int location);
+void SpawnInteractable(std::string name, int location, InteractableType type);
 void SpawnInteractablesInRoom(const Room& room);
-void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement);
+void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement, int location);
+void SetInteractablePickedUp(const Room& room, std::string interactableName, int location);
 
 Interactable InitializeInteractable(const std::string& linkedItem, const InteractableType& type);
 void DrawInteractables();
@@ -362,6 +397,7 @@ void DestroyEnemy(Enemy& enemy);
 // Enemy AI Handling
 void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
 void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
+void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDiffY, Enemy& enemy, int enemyIndex);
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize);
 
 // Boss Handling
