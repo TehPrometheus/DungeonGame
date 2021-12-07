@@ -912,11 +912,11 @@ void UseItem(Player& player, int itemslot)
 	if (selectedItem.count > 0)
 	{
 		--selectedItem.count;
+		
+		const int stacks{ player.effects[itemslot].stacks };
+		player.effects[itemslot] = selectedItem.effect;
+		player.effects[itemslot].stacks = stacks + 1;
 	}
-	
-	const int stacks{ player.effects[itemslot].stacks };
-	player.effects[itemslot] = selectedItem.effect;
-	player.effects[itemslot].stacks = stacks + 1;
 	
 	if (selectedItem.count == 0)
 	{
@@ -1307,7 +1307,7 @@ void UpdateStatusEffects(float elapsedSec)
 				g_Player.health -= currentEffect.modifier * currentEffect.stacks;
 				if (g_Player.health < 0)
 				{
-					g_Player.health = 1.f;
+					g_Player.health = 5.f;
 				}
 			}
 			StatusEffect nullEffect{};
