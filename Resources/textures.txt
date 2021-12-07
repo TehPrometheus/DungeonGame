@@ -58,3 +58,4 @@
 {speed_potion.png,speed_potion}
 {strength_potion.png,strength_potion}
 {regen_potion.png,regen_potion}
+{shield_potion.png,shield_potion}

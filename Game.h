@@ -111,7 +111,8 @@ enum class EffectType
 	health,
 	regeneration,
 	speedBoost,
-	strengthBoost
+	strengthBoost,
+	shielding
 };
 // structs
 struct Cell
@@ -126,6 +127,7 @@ struct StatusEffect
 	float duration;
 	float timeRemaining;
 	float modifier;
+	int stacks{ 0 };
 };
 struct Item
 {
@@ -349,6 +351,7 @@ void PickUpInteractable(int index, int location);
 void InitItems();
 Item InitializeItem(const std::string& itemName, const std::string& textureName, const ItemType& type, const EffectType effect, const float duration = 0.01f, const float modifier = 1.0f);
 void UpdateStatusEffects(float elapsedSec);
+void DrawStatusEffects(Player& player);
 void RollForDrop(Enemy& enemy);
 
 // Weapons Handling
