@@ -39,7 +39,7 @@ void Draw()
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawInteractables();
 		DrawWeaponInventory(g_Player);
-		DrawBoss();
+		// DrawBoss();
 		DrawPlayerHealth(g_Player);
 		break;
 	case GameStates::gameOverScreen:
@@ -488,7 +488,7 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 	InitPlayerSprites(Sprites);
 	player.sprite.texture = Sprites[idle].texture;
 	player.animState = AnimStates::idleRight;
-	player.dstRect = cellArr[97].dstRect; // 97 is starting pos in starting room
+	player.dstRect = cellArr[53].dstRect; // 97 is starting pos in starting room
 	player.animationPos = player.dstRect;
 	player.health = player.maxHealth;
 	player.selectedWeapon = 0;
@@ -856,25 +856,30 @@ void UseBow(const Player& player)
 {
 	const float bowDamage{ player.weaponInventory[player.selectedWeapon].damageOutput };
 	const float projectileSpeed{ 500.f };
+	Rectf spawnRect{ g_Player.dstRect };
 	if (player.facing == Direction::right)
 	{
 		const float angle{ 0.0f };
-		CreateProjectile(player.animationPos, "arrow_right", angle, projectileSpeed, bowDamage);
+		spawnRect.left += spawnRect.width /3;
+		CreateProjectile(spawnRect, "arrow_right", angle, projectileSpeed, bowDamage);
 	}
 	else if (player.facing == Direction::left)
 	{
 		const float angle{ g_Pi };
-		CreateProjectile(player.animationPos, "arrow_left", angle, projectileSpeed, bowDamage);
+		spawnRect.left -= spawnRect.width / 3;
+		CreateProjectile(spawnRect, "arrow_left", angle, projectileSpeed, bowDamage);
 	}
 	else if (player.facing == Direction::up)
 	{
-		const float angle{ g_Pi/2 };
-		CreateProjectile(player.animationPos, "arrow_up", angle, projectileSpeed, bowDamage);
+		const float angle{ g_Pi / 2 };
+		spawnRect.bottom += spawnRect.width / 3;
+		CreateProjectile(spawnRect, "arrow_up", angle, projectileSpeed, bowDamage);
 	}
 	else if (player.facing == Direction::down)
 	{
-		const float angle{ 3*g_Pi/2 };
-		CreateProjectile(player.animationPos, "arrow_down", angle, projectileSpeed, bowDamage);
+		const float angle{ 3 * g_Pi / 2 };
+		spawnRect.bottom -= spawnRect.width /3;
+		CreateProjectile(spawnRect, "arrow_down", angle, projectileSpeed, bowDamage);
 	}
 }
 void CycleWeapons(Player& player)
@@ -1038,6 +1043,11 @@ void UpdateProjectiles(float elapsedSec)
 				DestroyProjectile(g_Projectiles[i]);
 			}
 		}
+		if (IsPointInRect(g_Player.animationPos, projectileTip))
+		{
+			g_Player.health -= g_Projectiles[i].damage;
+			DestroyProjectile(g_Projectiles[i]);
+		}
 		for (int j{}; j < g_GridSize; ++j)
 		{
 			if (IsPointInRect(g_CellArr[j].dstRect, projectileTip) && g_CellArr[j].isObstacle)
@@ -1114,14 +1124,19 @@ void SpawnInteractablesInRoom(const Room & room)
 }
 void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement, int location)
 {
-	bool replaced{ false };
-	for (int j{}; j < g_MaxInteractablesRoom; ++j)
+	for (int i{}; i < g_NrRoomsPerLevel; ++i)
 	{
-		if (g_Level[int(room.id)].interactableShort[j].name == interactableToReplace &&
-			g_Level[int(room.id)].interactableShort[j].location == location)
-		{
-			g_Level[int(room.id)].interactableShort[j].name = interactableReplacement;
-			replaced = true;
+		if (g_Level[i].id == g_CurrentRoom.id) {
+			bool replaced{ false };
+			for (int j{}; j < g_MaxInteractablesRoom; ++j)
+			{
+				if (g_Level[i].interactableShort[j].name == interactableToReplace &&
+					g_Level[i].interactableShort[j].location == location)
+				{
+					g_Level[i].interactableShort[j].name = interactableReplacement;
+					replaced = true;
+				}
+			}
 		}
 	}
 }
@@ -1244,8 +1259,8 @@ Enemy InitializeEnemy(std::string enemyName)
 	if (enemyName == "bat") {
 		return InitializeEnemy(EnemyType::basic, "enemy_bat", 4.f, 1.f, 0.5f, 4);
 	}
-	if (enemyName == "skeleton") {
-		return InitializeEnemy(EnemyType::ranged, "enemy_skeleton", 5.f, 2.f, 0.8f, 10);
+	if (enemyName == "archer") {
+		return InitializeEnemy(EnemyType::ranged, "enemy_archer", 15.f, 2.f, 0.5f, 5);
 	}
 	if (enemyName == "crate")
 	{
@@ -1418,23 +1433,66 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 	{
 		enemy.timeTracker -= timeBetweenActions;
 		int movementDecider{ rand() % 2 };
-		bool isInRangeDiagonal{ indexDiffX != 0 && distX <= enemyRange
-							 && indexDiffY != 0 && distY <= enemyRange };
-		bool isInRangeX{ indexDiffY == 0 && distX > 1 && distX <= enemyRange };
-		bool isInRangeY{ indexDiffX == 0 && distY > 1 && distY <= enemyRange };
 
-		bool isNextToPlayerX{ distX == 1 && distY == 0 };
-		bool isNextToPlayerY{ distX == 0 && distY == 1 };
+		bool isTooCloseToPlayerX{ distX < enemy.viewRange&& distY == 0 };
+		bool isTooCloseToPlayerY{ distX == 0 && distY < enemy.viewRange };
+		bool inRange{ distX == 0 || distY == 0 };
 
-		if (isInRangeDiagonal)
+		int escapeIndexX{ enemyIndex + (indexDiffX > 0 ? -1 : 1) };
+		int escapeIndexY{ enemyIndex + (indexDiffY > 0 ? -g_NrCols : g_NrCols) };
+
+		int getInRangeIdxX{ enemyIndex + (indexDiffX > 0 ? 1 : -1) };
+		int getInRangeIdxY{ enemyIndex + (indexDiffY > 0 ? g_NrCols : -g_NrCols) };
+
+		bool canEscapeHorCheck{!cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_EnemyArrSize) };
+		bool canEscapeVertCheck{!cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_EnemyArrSize) };
+
+		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_EnemyArrSize) };
+		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
+		if (isTooCloseToPlayerX && isTooCloseToPlayerY && (canEscapeHorCheck || canEscapeVertCheck))
 		{
-			if (distX > distY && !cellArr[enemyIndex + (indexDiffX > 0 ? -g_NrCols : g_NrCols)].isObstacle)
-			{
-				enemy.dstRect = cellArr[enemyIndex + (indexDiffX > 0 ? -g_NrCols : g_NrCols)].dstRect;
+
+		}
+		else if (isTooCloseToPlayerX && (canEscapeHorCheck || canEscapeVertCheck))
+		{
+			if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			else if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+		}
+		else if (isTooCloseToPlayerY && (canEscapeHorCheck || canEscapeVertCheck))
+		{
+			if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+			else if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+		}
+		else if (!inRange && (canGetInRangeHorCheck || canGetInRangeVertCheck))
+		{
+			if (canGetInRangeVertCheck) enemy.dstRect = cellArr[getInRangeIdxY].dstRect;
+			else if (canGetInRangeHorCheck) enemy.dstRect = cellArr[getInRangeIdxX].dstRect;
+		}
+		else if (inRange)
+		{
+			Rectf spawnRect{ cellArr[enemyIndex].dstRect };
+			const float projectileSpeed{ 500.f };
+			if (indexDiffX > 0) {
+				float angle{ 0 };
+				spawnRect.left += spawnRect.width / 3;
+				CreateProjectile(spawnRect, "arrow_right", angle, projectileSpeed, enemy.damageOutput);
 			}
-			else if (!cellArr[enemyIndex + (indexDiffX > 0 ? 1 : -1)].isObstacle)
+			else if (indexDiffX < 0)
 			{
-				enemy.dstRect = cellArr[enemyIndex + (indexDiffX > 0 ? 1 : -1)].dstRect;
+				spawnRect.left -= spawnRect.width / 3;
+				float angle{ g_Pi };
+				CreateProjectile(spawnRect, "arrow_left", angle, projectileSpeed, enemy.damageOutput);
+			}
+			else if (indexDiffY > 0) {
+				float angle{ 3 * g_Pi/2 };
+				spawnRect.bottom -= spawnRect.width / 3;
+				CreateProjectile(spawnRect, "arrow_down", angle, projectileSpeed, enemy.damageOutput);
+			}
+			else if (indexDiffY < 0)
+			{
+				spawnRect.bottom += spawnRect.width / 3;
+				float angle{ g_Pi/2 };
+				CreateProjectile(spawnRect, "arrow_up", angle, projectileSpeed, enemy.damageOutput);
 			}
 		}
 	}
@@ -1661,9 +1719,6 @@ void InitializeRooms(Room level[])
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
 	startingRoom.interactableShort[0] = {"basic_sword", 71};
-	startingRoom.interactableShort[1] = {"basic_sword", 45};
-	startingRoom.interactableShort[2] = {"bow", 46};
-	startingRoom.interactableShort[3] = {"bow", 72};
 
 	Room& verticalHallway1 = level[1];
 	verticalHallway1.id = RoomID::verticalHallway1;
@@ -1718,6 +1773,11 @@ void InitializeRooms(Room level[])
 	pickupRoom1.id = RoomID::pickupRoom1;
 	pickupRoom1.layoutToLoad = "pickup_room_1.room";
 	pickupRoom1.leftDoorDestination = RoomID::horizontalHallway2;
+	pickupRoom1.enemyShorthand[0] = { "archer", 59 };
+	pickupRoom1.enemyShorthand[1] = { "zombie", 45 };
+	pickupRoom1.enemyShorthand[2] = { "zombie", 71 };
+	pickupRoom1.interactableShort[0] = { "bow", 58 };
+	pickupRoom1.interactableShort[1] = { "basic_sword", 54 };
 
 	Room& horizontalHallway3 = level[9];
 	horizontalHallway3.id = RoomID::horizontalHallway3;
@@ -1754,8 +1814,8 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
-	g_CurrentRoom = level[0];
-	LoadRoom(level[0]);
+	g_CurrentRoom = level[8];
+	LoadRoom(level[8]);
 }
 
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
@@ -1850,7 +1910,13 @@ bool CheckRoomCleared(Room& currentRoom)
 }
 void SetRoomCleared(Room& currentRoom)
 {
-	g_Level[int(g_CurrentRoom.id)].isCleared = true;
+	for (int i{}; i < g_NrRoomsPerLevel; ++i)
+	{
+		if (g_Level[i].id == currentRoom.id)
+		{
+			g_Level[i].isCleared = true;
+		}
+	}
 }
 #pragma endregion roomHandling
 
