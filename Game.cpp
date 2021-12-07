@@ -34,6 +34,7 @@ void Draw()
 	case GameStates::playing:
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
+		DrawStatusEffects(g_Player);
 		DrawProjectiles();
 		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
 		DrawEnemyHealthBars(g_EnemyArr);
@@ -938,7 +939,11 @@ void UseItem(Player& player, int itemslot)
 	{
 		--selectedItem.count;
 	}
+	
+	const int stacks{ player.effects[itemslot].stacks };
 	player.effects[itemslot] = selectedItem.effect;
+	player.effects[itemslot].stacks = stacks + 1;
+	
 	if (selectedItem.count == 0)
 	{
 		Item nullItem{};
@@ -1206,6 +1211,7 @@ void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.5f);
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
+	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe", WeaponType::sword, 3.5f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1237,6 +1243,8 @@ void InitItems()
 	g_Items[0] = InitializeItem("health_potion", "health_potion", ItemType::potion, EffectType::health);
 	g_Items[1] = InitializeItem("speed_potion", "speed_potion", ItemType::potion, EffectType::speedBoost, 10.f);
 	g_Items[2] = InitializeItem("strength_potion", "strength_potion", ItemType::potion, EffectType::strengthBoost, 10.f);
+	g_Items[3] = InitializeItem("regen_potion", "regen_potion", ItemType::potion, EffectType::regeneration, 10.f, 2.f);
+	g_Items[4] = InitializeItem("shield_potion", "shield_potion", ItemType::potion, EffectType::shielding, 10.f, 20.f);
 }
 Item InitializeItem(const std::string& itemName, const std::string& textureName, const ItemType& type, const EffectType effect, const float duration, const float modifier)
 {
@@ -1257,6 +1265,7 @@ void UpdateStatusEffects(float elapsedSec)
 	{
 		StatusEffect& currentEffect = g_Player.effects[i];
 		const float speedAmp{ 1.5f };
+		const float strengthAmp{ 2.0f };
 		// HEALTH POTION
 		if (currentEffect.effectType == EffectType::health)
 		{
@@ -1264,6 +1273,14 @@ void UpdateStatusEffects(float elapsedSec)
 			{
 				g_Player.health += 10.f * currentEffect.modifier;
 			}
+			if (g_Player.health > g_Player.maxHealth)
+			{
+				g_Player.health = g_Player.maxHealth;
+			}
+		}
+		else if (currentEffect.effectType == EffectType::regeneration)
+		{
+			g_Player.health += elapsedSec * currentEffect.modifier;
 			if (g_Player.health > g_Player.maxHealth)
 			{
 				g_Player.health = g_Player.maxHealth;
@@ -1282,27 +1299,75 @@ void UpdateStatusEffects(float elapsedSec)
 			{
 				for (int i{}; i < g_WeaponInventorySize; ++i)
 				{
-					g_Player.weaponInventory[i].damageOutput *= 2 * currentEffect.modifier;
+					g_Player.weaponInventory[i].damageOutput *= strengthAmp * currentEffect.modifier;
 				}
 			}
 		}
+		else if (currentEffect.effectType == EffectType::shielding)
+		{
+			if (currentEffect.duration - currentEffect.timeRemaining < 0.0001f) 
+			{
+				g_Player.maxHealth += currentEffect.modifier;
+				g_Player.health += currentEffect.modifier;
+			}
+		}
+		
 		currentEffect.timeRemaining -= elapsedSec;
+		
 		if (currentEffect.timeRemaining <= 0)
 		{
 			if (currentEffect.effectType == EffectType::speedBoost)
 			{
-				g_Player.speedModifier /= speedAmp * currentEffect.modifier;
+				g_Player.speedModifier /= speedAmp * currentEffect.modifier * currentEffect.stacks;
 			}
 			else if (currentEffect.effectType == EffectType::strengthBoost)
 			{
 				for (int i{}; i < g_WeaponInventorySize; ++i)
 				{
-					g_Player.weaponInventory[i].damageOutput /= 2 * currentEffect.modifier;
+					g_Player.weaponInventory[i].damageOutput /= strengthAmp * currentEffect.modifier * currentEffect.stacks;
+				}
+			}
+			else if (currentEffect.effectType == EffectType::shielding)
+			{
+				g_Player.maxHealth -= currentEffect.modifier * currentEffect.stacks;
+				g_Player.health -= currentEffect.modifier * currentEffect.stacks;
+				if (g_Player.health < 0)
+				{
+					g_Player.health = 1.f;
 				}
 			}
 			StatusEffect nullEffect{};
 			currentEffect = nullEffect;
 		}
+	}
+}
+void DrawStatusEffects(Player& player)
+{
+	Point2f playerCenter{ player.animationPos.left + player.animationPos.width / 2, player.animationPos.bottom + player.animationPos.height / 2 };
+	float radius{ player.animationPos.width };
+	for (int i{}; i < g_ItemInventorySize; ++i)
+	{
+		switch (player.effects[i].effectType)
+		{
+		case EffectType::health:
+			SetColor(1.0f, 0.0f, 0.0f, 0.05f);
+			break;
+		case EffectType::regeneration:
+			SetColor(0.0f, 1.0f, 0.0f, 0.05f);
+			break;
+		case EffectType::shielding:
+			SetColor(0.0f, 1.0f, 1.0f, 0.05f);
+			break;
+		case EffectType::speedBoost:
+			SetColor(1.0f, 1.0f, 0.0f, 0.05f);
+			break;
+		case EffectType::strengthBoost:
+			SetColor(0.0f, 0.0f, 1.0f, 0.05f);
+			break;
+		default:
+			SetColor(0.0f, 0.0f, 0.0f, 0.0f);
+		}
+		FillEllipse(playerCenter, radius, radius);
 	}
 }
 Item FetchItem(const std::string& name)
@@ -1319,18 +1384,45 @@ Item FetchItem(const std::string& name)
 }
 void RollForDrop(Enemy& enemy)
 {
-	int dieRoll{ rand() % 20 };
-	if (dieRoll == 0)
+	int location{ GetEnemyGridIndex(enemy, g_CellArr, g_GridSize) };
+	int dieRoll{ rand() % 200 };
+	std::string itemToSpawn{};
+	InteractableType type{};
+	if (dieRoll < 9)
 	{
-		SpawnInteractable("health_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+		itemToSpawn = "health_potion";
+		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll == 1)
+	else if (dieRoll < 19)
 	{
-		SpawnInteractable("strength_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+		itemToSpawn = "strength_potion";
+		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll == 2)
+	else if (dieRoll < 29)
 	{
-		SpawnInteractable("speed_potion", GetEnemyGridIndex(enemy, g_CellArr, g_GridSize), InteractableType::itemDrop);
+		itemToSpawn = "speed_potion";
+		type = InteractableType::itemDrop;
+	}
+	else if (dieRoll < 32)
+	{
+		itemToSpawn = "basic_axe";
+		type = InteractableType::weaponDrop;
+	}
+	else if (dieRoll < 42)
+	{
+		itemToSpawn = "regen_potion";
+		type = InteractableType::itemDrop;
+	}
+	else if (dieRoll < 200)
+	{
+		itemToSpawn = "shield_potion";
+		type = InteractableType::itemDrop;
+	}
+
+	if (itemToSpawn != "")
+	{
+		SpawnInteractable(itemToSpawn, location, type);
+		AddInteractableToRoom(g_CurrentRoom, itemToSpawn, location, type);
 	}
 }
 #pragma endregion itemHandling
@@ -1360,6 +1452,7 @@ void SpawnInteractablesInRoom(const Room & room)
 		}
 	}
 }
+
 void ReplaceInteractableInRoom(const Room& room, std::string interactableToReplace, std::string interactableReplacement, int location)
 {
 	for (int i{}; i < g_NrRoomsPerLevel; ++i)
@@ -1382,13 +1475,35 @@ void SetInteractablePickedUp(const Room& room, std::string interactableName, int
 {
 	for (int i{}; i < g_NrRoomsPerLevel; ++i)
 	{
-		if (g_Level[i].id == g_CurrentRoom.id) {
+		if (g_Level[i].id == g_CurrentRoom.id) 
+		{
 			for (int j{}; j < g_MaxInteractablesRoom; ++j)
 			{
 				if (g_Level[i].interactableShort[j].name == interactableName &&
 					g_Level[i].interactableShort[j].location == location)
 				{
 					g_Level[i].interactableShort[j].pickedUp = true;
+				}
+			}
+		}
+	}
+}
+void AddInteractableToRoom(const Room& room, std::string interactableName, int location, InteractableType type)
+{
+	bool addedToRoom{ false };
+	for (int i{}; i < g_NrRoomsPerLevel; ++i)
+	{
+		if (g_Level[i].id == room.id)
+		{
+			for (int j{}; j < g_MaxInteractablesRoom; ++j)
+			{
+				if (g_Level[i].interactableShort[j].name == "" && !addedToRoom)
+				{
+					g_Level[i].interactableShort[j].location = location;
+					g_Level[i].interactableShort[j].name = interactableName;
+					g_Level[i].interactableShort[j].pickedUp = false;
+					g_Level[i].interactableShort[j].type = type;
+					addedToRoom = true;
 				}
 			}
 		}
@@ -1441,7 +1556,7 @@ void PickUpInteractable(int index, int location)
 			Item itemHolder = g_Player.itemInventory[g_Player.selectedItem];
 			g_Player.itemInventory[g_Player.selectedItem] = g_Interactables[index].linkedItem;
 			g_Interactables[index].linkedItem = itemHolder;
-			ReplaceInteractableInRoom(g_CurrentRoom, g_Player.weaponInventory[g_Player.selectedWeapon].name, itemHolder.name, location);
+			ReplaceInteractableInRoom(g_CurrentRoom, g_Player.itemInventory[g_Player.selectedItem].name, itemHolder.name, location);
 		}
 	}
 }
@@ -2060,13 +2175,19 @@ void InitializeRooms(Room level[])
 	verticalHallway2.layoutToLoad = "vertical_hallway_2.room";
 	verticalHallway2.bottomDoorDestination = RoomID::combatRoom1;
 	verticalHallway2.topDoorDestination = RoomID::pickupRoom2;
+	verticalHallway2.enemyShorthand[0] = { "bat", GetIndex(2, 4) };
+	verticalHallway2.enemyShorthand[1] = { "bat", GetIndex(4, 4) };
+	verticalHallway2.enemyShorthand[2] = { "bat", GetIndex(6, 4) };
+	verticalHallway2.enemyShorthand[3] = { "bat", GetIndex(2, 8) };
+	verticalHallway2.enemyShorthand[4] = { "bat", GetIndex(4, 8) };
+	verticalHallway2.enemyShorthand[5] = { "bat", GetIndex(6, 8) };
 
 	Room& pickupRoom2 = level[4];
 	pickupRoom2.id = RoomID::pickupRoom2;
 	pickupRoom2.layoutToLoad = "pickup_room_2.room";
 	pickupRoom2.bottomDoorDestination = RoomID::verticalHallway2;
 	pickupRoom2.interactableShort[0] = { "strength_potion", GetIndex(6,4), InteractableType::itemDrop };
-	pickupRoom2.interactableShort[1] = { "health_potion", GetIndex(2,6), InteractableType::itemDrop };
+	pickupRoom2.interactableShort[1] = { "regen_potion", GetIndex(2,6), InteractableType::itemDrop };
 	pickupRoom2.interactableShort[2] = { "speed_potion", GetIndex(6,8), InteractableType::itemDrop };
 
 	Room& horizontalHallway1 = level[5];
@@ -2095,6 +2216,8 @@ void InitializeRooms(Room level[])
 	pickupRoom1.layoutToLoad = "pickup_room_1.room";
 	pickupRoom1.leftDoorDestination = RoomID::horizontalHallway2;
 	pickupRoom1.enemyShorthand[0] = { "archer", 46 };
+	pickupRoom1.enemyShorthand[1] = { "bat", GetIndex(2, 5) };
+	pickupRoom1.enemyShorthand[2] = { "bat", GetIndex(6, 5) };
 	pickupRoom1.interactableShort[0] = { "bow", 58, InteractableType::weaponDrop };
 
 	Room& horizontalHallway3 = level[9];
@@ -2183,11 +2306,9 @@ Room FetchRoom(const RoomID& id)
 void LoadRoom(const Room& roomToLoad)
 {
 	// This function will allow us to always retrieve the enemy array etc from any room we're loading by adding said code below
-	std::cout << roomToLoad.layoutToLoad << '\n';
 	ClearInteractables();
 	ClearEnemies();
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
-	// e.g. LoadEnemiesInRoom(roomToLoad.enemies);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	SpawnInteractablesInRoom(roomToLoad);
 	if (!roomToLoad.isCleared) {
@@ -2235,7 +2356,7 @@ void SetRoomCleared(Room& currentRoom)
 		}
 	}
 }
-#pragma endregion roomHandling
+#pragma endregion roomHandling 
 
 #pragma region levelHandling
 // Level Handling
