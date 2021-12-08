@@ -13,6 +13,7 @@ float g_WindowHeight{ 720 };
 
 #pragma region ownDeclarations
 // Declare your own global variables here
+float g_DebugTimer{0.f};
 
 const int g_NrRows				{ 9 };
 const int g_NrCols				{ 13 };
@@ -37,6 +38,7 @@ enum class GameStates
 	startScreen,
 	playing,
 	gameOverScreen,
+	gameWonScreen,
 	restarting
 };
 
@@ -81,7 +83,8 @@ enum class AnimStates
 	runLeft,
 	runUp,
 	runDown, 
-	hit
+	hit,
+	death
 };
 enum class RoomID
 {
@@ -105,7 +108,8 @@ enum class BossAIStates
 {
 	idle,
 	basicAttack,
-	charge
+	charge,
+	death
 };
 enum class EffectType
 {
@@ -225,7 +229,7 @@ struct Enemy
 	float damageOutput;
 	int viewRange;
 };
-struct Boss
+struct Boss // WORK IN PROGRESS
 {
 	Rectf dstRect;
 	Rectf srcRect;
@@ -239,7 +243,8 @@ struct Boss
 	float health;
 	float maxHealth;
 	float damageOutput;
-	float timeTracker;
+	float decisionTimer;
+	float hitTimer;
 	int viewRange;
 };
 struct EnemyShorthand
@@ -427,6 +432,9 @@ void UpdateBossAIState(float elapsedSec);
 void ChargeAtPlayer(float elapsedSec);
 float BossDistanceToChargePoint();
 bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
+bool IsBossDead();
+void BossAttackPlayer(float elapsedSec);
+void BossLookAtPlayer();
 
 
 
@@ -457,7 +465,7 @@ void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec);
 
 // Game Handling
 void DrawStartScreen();
-void DrawEndScreen();
+void DrawWonScreen();
 void ClickStart(const SDL_MouseButtonEvent& e);
 void SetGameOverScreen(Player& player);
 

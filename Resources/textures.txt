@@ -43,10 +43,8 @@
 {zombie_idle_anim.png,zombie_idle_anim}
 {zombie_run_right_anim.png,zombie_run_right_anim}
 {zombie_run_left_anim.png,zombie_run_left_anim}
-
-{end_screen.png,end_screen}
+{won_screen.png,won_screen}
 {starting_screen.png,starting_screen}
-
 {weapon_inventory.png,weapon_inventory}
 
 {basic_axe_up.png,basic_axe_up}
@@ -55,7 +53,10 @@
 {basic_axe_right.png,basic_axe_right}
 
 {boss_anim_idle_right.png,boss_anim_idle_right}
+{boss_anim_idle_left.png,boss_anim_idle_left}
 {boss_anim_run_right.png,boss_anim_run_right}
+{boss_anim_run_left.png,boss_anim_run_left}
+{boss_anim_death.png,boss_anim_death}
 
 {bow_right.png,bow_right}
 {bow_left.png,bow_left}
