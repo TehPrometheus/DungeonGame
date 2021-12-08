@@ -35,11 +35,11 @@ void Draw()
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
+		DrawInteractables();
 		DrawProjectiles();
 		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
-		DrawInteractables();
 		DrawWeaponInventory(g_Player);
 		DrawItemInventory(g_Player);
 		DrawBoss();
@@ -993,7 +993,7 @@ void UseBow(const Player& player)
 {
 	const float bowDamage{ player.weaponInventory[player.selectedWeapon].damageOutput };
 	const float projectileSpeed{ 500.f };
-	Rectf spawnRect{ g_Player.dstRect };
+	Rectf spawnRect{ g_Player.animationPos };
 	if (player.facing == Direction::right)
 	{
 		const float angle{ 0.0f };
@@ -1105,42 +1105,46 @@ void DrawBowReach(const Player& player)
 	if (player.facing == Direction::up)
 	{
 		nextIndex -= g_NrCols;
-		do {
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !g_CellArr[nextIndex].isObstacle
+			&& nextIndex > 0 && nextIndex < g_GridSize)
+		{
 			FillRect(g_CellArr[nextIndex].dstRect);
 			nextIndex -= g_NrCols;
-		} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
-			  && !g_CellArr[nextIndex].isObstacle
-			  && nextIndex > 0 && nextIndex < g_GridSize);
+		} 
 	}
 	if (player.facing == Direction::down)
 	{
 		nextIndex += g_NrCols;
-		do {
-		FillRect(g_CellArr[nextIndex].dstRect);
-		nextIndex += g_NrCols;
-	} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
-		  && !g_CellArr[nextIndex].isObstacle
-		  && nextIndex > 0 && nextIndex < g_GridSize);
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !g_CellArr[nextIndex].isObstacle
+			&& nextIndex > 0 && nextIndex < g_GridSize)
+		{
+			FillRect(g_CellArr[nextIndex].dstRect);
+			nextIndex += g_NrCols;
+		}
 	}
 	if (player.facing == Direction::left)
 	{
 		nextIndex -= 1;
-		do {
-		FillRect(g_CellArr[nextIndex].dstRect);
-		nextIndex -= 1;
-	} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
-		  && !g_CellArr[nextIndex].isObstacle
-		  && nextIndex > 0 && nextIndex < g_GridSize);
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !g_CellArr[nextIndex].isObstacle
+			&& nextIndex > 0 && nextIndex < g_GridSize)
+		{
+			FillRect(g_CellArr[nextIndex].dstRect);
+			nextIndex -= 1;
+		}
 	}
 	if (player.facing == Direction::right)
 	{
 		nextIndex += 1;
-		do {
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+			&& !g_CellArr[nextIndex].isObstacle
+			&& nextIndex > 0 && nextIndex < g_GridSize)
+		{
 			FillRect(g_CellArr[nextIndex].dstRect);
 			nextIndex += 1;
-		} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
-			  && !g_CellArr[nextIndex].isObstacle
-			  && nextIndex > 0 && nextIndex < g_GridSize);
+		} 
 	}
 }
 #pragma endregion playerInputHandling
@@ -1199,6 +1203,7 @@ void UpdateProjectiles(float elapsedSec)
 			projectileCenter.x + projectileSize * cosf(g_Projectiles[i].direction), 
 			projectileCenter.y + projectileSize * sinf(g_Projectiles[i].direction) };
 		// Damage appropriate target
+		FillEllipse(projectileTip, 2.0f, 2.0f);
 		for (int j{}; j < g_MaxEnemiesPerRoom; ++j)
 		{
 			if (IsPointInRect(g_EnemyArr[j].animationPos, projectileTip))
@@ -1229,6 +1234,13 @@ void DestroyProjectile(Projectile& projectile)
 {
 	Projectile nullProjectile{};
 	projectile = nullProjectile;
+}
+void ClearProjectiles()
+{
+	for (int i{}; i < g_MaxProjectiles; ++i)
+	{
+		DestroyProjectile(g_Projectiles[i]);
+	}
 }
 #pragma endregion projectileHandling
 
@@ -1909,7 +1921,7 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 
 void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDiffY, Enemy& enemy, int enemyIndex)
 {
-	Rectf spawnRect{ cellArr[enemyIndex].dstRect };
+	Rectf spawnRect{ enemy.animationPos };
 	const float projectileSpeed{ 500.f };
 	if (indexDiffX > 0) {
 		float angle{ 0 };
@@ -2335,6 +2347,7 @@ void LoadRoom(const Room& roomToLoad)
 	// This function will allow us to always retrieve the enemy array etc from any room we're loading by adding said code below
 	ClearInteractables();
 	ClearEnemies();
+	ClearProjectiles();
 	LoadRoomLayout(g_CellArr, roomToLoad.layoutToLoad);
 	SetObstacles(g_CellArr, g_NrRows, g_NrCols);
 	SpawnInteractablesInRoom(roomToLoad);

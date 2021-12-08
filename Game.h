@@ -369,6 +369,7 @@ Projectile InitializeProjectile(std::string type, float speed);
 void DrawProjectiles();
 void UpdateProjectiles(float elapsedSec);
 void DestroyProjectile(Projectile& projectile);
+void ClearProjectiles(Projectile projectiles[]);
 
 // Interactable Handling
 void SpawnInteractable(std::string name, int location, InteractableType type);
