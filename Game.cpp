@@ -938,11 +938,11 @@ void UseItem(Player& player, int itemslot)
 	if (selectedItem.count > 0)
 	{
 		--selectedItem.count;
+		
+		const int stacks{ player.effects[itemslot].stacks };
+		player.effects[itemslot] = selectedItem.effect;
+		player.effects[itemslot].stacks = stacks + 1;
 	}
-	
-	const int stacks{ player.effects[itemslot].stacks };
-	player.effects[itemslot] = selectedItem.effect;
-	player.effects[itemslot].stacks = stacks + 1;
 	
 	if (selectedItem.count == 0)
 	{
@@ -1050,67 +1050,94 @@ void DrawSwordReach(const Player& player)
 	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword) {
 		int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
 		if (player.facing == Direction::up) {
-			FillRect(g_CellArr[playerIndex - g_NrCols - 1].dstRect);
-			FillRect(g_CellArr[playerIndex - g_NrCols].dstRect);
-			FillRect(g_CellArr[playerIndex - g_NrCols + 1].dstRect);
+			for (int i{ -1 }; i < 2; ++i)
+			{
+				const int currentTile{ playerIndex - g_NrCols + i };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
 		}
 		else if (player.facing == Direction::down && playerIndex + g_NrCols < g_GridSize)
-		// If index larger than gridsize, everything gets white overlay
 		{
-			FillRect(g_CellArr[playerIndex + g_NrCols - 1].dstRect);
-			FillRect(g_CellArr[playerIndex + g_NrCols].dstRect);
-			FillRect(g_CellArr[playerIndex + g_NrCols + 1].dstRect);
+			for (int i{ -1 }; i < 2; ++i)
+			{
+				const int currentTile{ playerIndex + g_NrCols + i };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
 		}
 		else if (player.facing == Direction::right)
 		{
-			FillRect(g_CellArr[playerIndex + 1 - g_NrCols].dstRect);
-			FillRect(g_CellArr[playerIndex + 1].dstRect);
-			FillRect(g_CellArr[playerIndex + 1 + g_NrCols].dstRect);
+			for (int i{ -1 }; i < 2; ++i)
+			{
+				const int currentTile{ playerIndex + 1 + i * g_NrCols };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
 		}
 		else if (player.facing == Direction::left)
 		{
-			FillRect(g_CellArr[playerIndex - 1 - g_NrCols].dstRect);
-			FillRect(g_CellArr[playerIndex - 1].dstRect);
-			FillRect(g_CellArr[playerIndex - 1 + g_NrCols].dstRect);
+			for (int i{-1}; i < 2; ++i)
+			{
+				const int currentTile{ playerIndex - 1 + i * g_NrCols };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
 		}
 	}
 }
 void DrawBowReach(const Player& player) 
 {
 	const int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
-	int nextIndex{ playerIndex };
+	int nextIndex{ playerIndex};
 	if (player.facing == Direction::up)
 	{
+		nextIndex -= g_NrCols;
 		do {
-			nextIndex -= g_NrCols;
 			FillRect(g_CellArr[nextIndex].dstRect);
+			nextIndex -= g_NrCols;
 		} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
 			  && !g_CellArr[nextIndex].isObstacle
 			  && nextIndex > 0 && nextIndex < g_GridSize);
 	}
 	if (player.facing == Direction::down)
 	{
-		do {
 		nextIndex += g_NrCols;
+		do {
 		FillRect(g_CellArr[nextIndex].dstRect);
+		nextIndex += g_NrCols;
 	} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
 		  && !g_CellArr[nextIndex].isObstacle
 		  && nextIndex > 0 && nextIndex < g_GridSize);
 	}
 	if (player.facing == Direction::left)
 	{
-		do {
 		nextIndex -= 1;
+		do {
 		FillRect(g_CellArr[nextIndex].dstRect);
+		nextIndex -= 1;
 	} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
 		  && !g_CellArr[nextIndex].isObstacle
 		  && nextIndex > 0 && nextIndex < g_GridSize);
 	}
 	if (player.facing == Direction::right)
 	{
+		nextIndex += 1;
 		do {
-			nextIndex += 1;
 			FillRect(g_CellArr[nextIndex].dstRect);
+			nextIndex += 1;
 		} while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize) 
 			  && !g_CellArr[nextIndex].isObstacle
 			  && nextIndex > 0 && nextIndex < g_GridSize);
@@ -1333,7 +1360,7 @@ void UpdateStatusEffects(float elapsedSec)
 				g_Player.health -= currentEffect.modifier * currentEffect.stacks;
 				if (g_Player.health < 0)
 				{
-					g_Player.health = 1.f;
+					g_Player.health = 5.f;
 				}
 			}
 			StatusEffect nullEffect{};
@@ -1388,32 +1415,32 @@ void RollForDrop(Enemy& enemy)
 	int dieRoll{ rand() % 200 };
 	std::string itemToSpawn{};
 	InteractableType type{};
-	if (dieRoll < 9)
+	if (dieRoll < 4)
 	{
 		itemToSpawn = "health_potion";
 		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll < 19)
+	else if (dieRoll < 9)
 	{
 		itemToSpawn = "strength_potion";
 		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll < 29)
+	else if (dieRoll < 14)
 	{
 		itemToSpawn = "speed_potion";
 		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll < 32)
+	else if (dieRoll < 17)
 	{
 		itemToSpawn = "basic_axe";
 		type = InteractableType::weaponDrop;
 	}
-	else if (dieRoll < 42)
+	else if (dieRoll < 22)
 	{
 		itemToSpawn = "regen_potion";
 		type = InteractableType::itemDrop;
 	}
-	else if (dieRoll < 52)
+	else if (dieRoll < 27)
 	{
 		itemToSpawn = "shield_potion";
 		type = InteractableType::itemDrop;

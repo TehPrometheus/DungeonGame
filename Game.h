@@ -49,6 +49,7 @@ enum class EnemyType
 };
 enum class WeaponType
 {
+	none,
 	sword,
 	bow
 };
@@ -292,7 +293,7 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_Grey{ 204 / 255.f, 204 / 255.f, 204 / 255.f, 255 / 255.f },
 				g_Black{ 0,0,0,1 },
 				g_White{ 1,1,1,1 },
-				g_WhiteTransparent{1.f, 1.f, 1.f, 0.02f};
+				g_WhiteTransparent{1.f, 1.f, 1.f, 0.1f};
 
 // Declare your own functions here
 
