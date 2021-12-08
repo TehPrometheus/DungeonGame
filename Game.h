@@ -107,8 +107,9 @@ enum class RoomID
 enum class BossAIStates
 {
 	idle,
-	basicAttack,
 	charge,
+	spawnMinions,
+	regenerate,
 	death
 };
 enum class EffectType
@@ -436,6 +437,7 @@ bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
 bool IsBossDead();
 void BossAttackPlayer(float elapsedSec);
 void BossLookAtPlayer();
+bool IsBossBelowHalfHealth();
 
 
 
