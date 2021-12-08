@@ -2279,8 +2279,6 @@ void InitializeRooms(Room level[])
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
 	startingRoom.interactableShort[0] = {"basic_sword", 70, InteractableType::weaponDrop};
-	startingRoom.interactableShort[2] = {"basic_axe", 70, InteractableType::weaponDrop};
-	startingRoom.interactableShort[3] = {"bow", 70, InteractableType::weaponDrop};
 	startingRoom.interactableShort[1] = {"health_potion", 72, InteractableType::itemDrop};
 
 	Room& verticalHallway1 = level[1];
