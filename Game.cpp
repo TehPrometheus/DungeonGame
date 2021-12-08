@@ -1326,20 +1326,20 @@ void UpdateWeaponAnimation(float elapsedSec)
 		switch (g_Player.facing)
 		{
 		case Direction::up:
-			animation.position.left = g_Player.dstRect.left - cellSize + animation.elapsedTime * animationDist / animation.playTime;
-			animation.position.bottom = g_Player.dstRect.bottom + cellSize/2;
+			animation.position.left = g_Player.animationPos.left - cellSize + animation.elapsedTime * animationDist / animation.playTime;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize/2;
 			break;
 		case Direction::down:
-			animation.position.left = g_Player.dstRect.left + cellSize - animation.elapsedTime * animationDist / animation.playTime;
-			animation.position.bottom = g_Player.dstRect.bottom - cellSize/2;
+			animation.position.left = g_Player.animationPos.left + cellSize - animation.elapsedTime * animationDist / animation.playTime;
+			animation.position.bottom = g_Player.animationPos.bottom - cellSize/2;
 			break;
 		case Direction::right:
-			animation.position.left = g_Player.dstRect.left + cellSize/2;
-			animation.position.bottom = g_Player.dstRect.bottom + cellSize - animation.elapsedTime * animationDist / animation.playTime;
+			animation.position.left = g_Player.animationPos.left + cellSize/2;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize - animation.elapsedTime * animationDist / animation.playTime;
 			break;
 		case Direction::left:
-			animation.position.left = g_Player.dstRect.left - cellSize/2;
-			animation.position.bottom = g_Player.dstRect.bottom + cellSize - animation.elapsedTime * animationDist / animation.playTime;
+			animation.position.left = g_Player.animationPos.left - cellSize/2;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize - animation.elapsedTime * animationDist / animation.playTime;
 			break;
 		}
 		animation.elapsedTime += elapsedSec;
