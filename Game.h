@@ -146,6 +146,14 @@ struct Weapon
 	WeaponType type{};
 	float damageOutput{};
 };
+struct WeaponAnimation
+{
+	float playTime;
+	float elapsedTime;
+	bool enabled{ true };
+	bool isPlaying{ false };
+	Rectf position;
+};
 struct Projectile // WORK IN PROGRESS
 {
 	std::string type;
@@ -200,6 +208,7 @@ struct Player
 
 	Weapon weaponInventory[g_WeaponInventorySize];
 	int selectedWeapon;
+	WeaponAnimation weaponAnimation;
 
 	StatusEffect effects[g_ItemInventorySize];
 };
@@ -362,6 +371,9 @@ void RollForDrop(Enemy& enemy);
 void InitWeapons();
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage);
 Weapon FetchWeapon(const std::string& name);
+
+void UpdateWeaponAnimation(float elapsedSec);
+void DrawWeaponAnimation();
 
 // Projectile Handling
 void CreateProjectile(Rectf location, std::string type, float direction, float speed, float damage);
