@@ -9,20 +9,16 @@
 #pragma region gameFunctions											
 void Start()
 {
-	// initialize game resources here
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
 	InitItems();
 	InitWeapons();
 	InitializeRooms(g_Level);
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
-
 }
 
 void Draw()
 {
 	ClearBackground(0,0,0);
-
-
 
 	switch (g_Game)
 	{
@@ -42,13 +38,15 @@ void Draw()
 		DrawWeaponInventory(g_Player);
 		DrawItemInventory(g_Player);
 		DrawBoss();
-
 		DrawPlayerHealth(g_Player);
-		DrawBoss();
 		break;
 	case GameStates::gameOverScreen:
+		std::cerr << "gameoverscreen" << std::endl;
+
 		break;
 	case GameStates::gameWonScreen:
+		std::cerr << "gamewonscreen" << std::endl;
+
 		DrawWonScreen();
 		break;
 	case GameStates::restarting:
@@ -2106,9 +2104,9 @@ void InitBoss()
 {
 	g_Boss.AIState = BossAIStates::idle;
 	g_Boss.animState = AnimStates::idleRight;
-	g_Boss.maxHealth = 100.f;
+	g_Boss.maxHealth = 300.f;
 	g_Boss.health = g_Boss.maxHealth;
-	g_Boss.damageOutput = 0.5f;
+	g_Boss.damageOutput = 0.8f;
 	g_Boss.decisionTimer = 0.f;
 	g_Boss.hitTimer = 0.f;
 	g_Boss.viewRange = 10;
@@ -2158,10 +2156,10 @@ float BossDistanceToChargePoint()
 }
 void ChargeAtPlayer(float elapsedSec)
 {
-	if (BossDistanceToChargePoint() > 1.f)
+	if (BossDistanceToChargePoint() > 3.f)
 	{
-		g_Boss.dstRect.left -= (g_Boss.delta.x / 1.f) * elapsedSec;
-		g_Boss.dstRect.bottom -= (g_Boss.delta.y / 1.f) * elapsedSec;
+		g_Boss.dstRect.left -= g_Boss.delta.x * elapsedSec;
+		g_Boss.dstRect.bottom -= g_Boss.delta.y * elapsedSec;
 	}
 	else
 	{
@@ -2176,38 +2174,75 @@ void UpdateBossAIState(float elapsedSec)
 	IsBossDead();
 	BossAttackPlayer(elapsedSec);
 	g_Boss.decisionTimer += elapsedSec;
-	float thinkingTime{ 2.f }; // The time the boss takes to make a decision. Each decision corresponds to an AIState.
+	float thinkingTime{1.f};
+	int randInt{1 + rand() % 100 };
 
+	int chargeChance{ 65 };
+	int spawnMinionsChance{ 15 };
+	int regenChance{ 5 };
 	switch (g_Boss.AIState)
 	{
-		case BossAIStates::idle :
+		case BossAIStates::idle:
 		{
-			g_Boss.animState = AnimStates::idleRight;
 			if (g_Boss.decisionTimer > thinkingTime)
 			{
-				g_Boss.AIState = BossAIStates::charge;
-				g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
-				g_Boss.delta.y = g_Boss.dstRect.bottom - g_Player.dstRect.bottom;
-				g_Boss.chargeEndPoint.x = g_Player.dstRect.left;
-				g_Boss.chargeEndPoint.y = g_Player.dstRect.bottom;
-				g_Boss.chargeStartPoint.x = g_Boss.dstRect.left;
-				g_Boss.chargeStartPoint.y = g_Boss.dstRect.bottom;
+				if (randInt > 0 && randInt < regenChance)
+				{
+					g_Boss.AIState = BossAIStates::regenerate;
 
-				g_Boss.decisionTimer = 0;
+					g_Boss.decisionTimer = 0;
+					break;
+				}
+				else if (randInt > regenChance && randInt < spawnMinionsChance)
+				{
+					g_Boss.AIState = BossAIStates::spawnMinions;
+
+					g_Boss.decisionTimer = 0;
+
+					break;
+				}
+				else if (randInt > spawnMinionsChance && randInt < chargeChance)
+				{
+					g_Boss.AIState = BossAIStates::charge;
+					g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
+					g_Boss.delta.y = g_Boss.dstRect.bottom - g_Player.dstRect.bottom;
+					g_Boss.chargeEndPoint.x = g_Player.dstRect.left;
+					g_Boss.chargeEndPoint.y = g_Player.dstRect.bottom;
+					g_Boss.decisionTimer = 0;
+					break;
+				}
+				else
+				{
+					g_Boss.AIState = BossAIStates::charge;
+					g_Boss.decisionTimer = 0;
+					break;
+				}
 			}
 			break;
 		}
-
 		case BossAIStates::charge:
 		{
-			g_Boss.animState = AnimStates::runRight;
 			ChargeAtPlayer(elapsedSec);
+std::cerr << "boss is charging!" << std::endl;
 			break;
 		}
-
-		case BossAIStates::basicAttack :
+		case BossAIStates::spawnMinions:
 		{
-
+			const int nrOfMinions{ g_MaxEnemiesPerRoom };
+			EnemyShorthand minions[g_MaxEnemiesPerRoom]{ {"rusher",18 } ,{"rusher",19 } , {"rusher",20 } , {"rusher",21 } , {"rusher",22 } };
+			SpawnEnemies(minions);
+std::cerr << "boss spawned minions!" << std::endl;
+			g_Boss.AIState = BossAIStates::idle;
+			break;
+		}
+		case BossAIStates::regenerate:
+		{
+			if (g_Boss.health != g_Boss.maxHealth)
+			{
+				g_Boss.health += 0.2f * g_Boss.maxHealth;	
+			}
+std::cerr << "boss healed himself!" << std::endl;
+			g_Boss.AIState = BossAIStates::idle;
 			break;
 		}
 		case BossAIStates::death:
@@ -2321,7 +2356,7 @@ void BossAttackPlayer(float elapsedSec)
 	if (IsOverlapping(g_Boss.dstRect, g_Player.dstRect) && g_Boss.hitTimer > hitRate)
 	{
 		g_Player.health -= g_Boss.damageOutput;
-		g_Boss.hitTimer -= hitRate;
+		g_Boss.hitTimer = 0;
 	}
 
 
