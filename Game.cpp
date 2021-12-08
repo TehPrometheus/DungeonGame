@@ -15,7 +15,6 @@ void Start()
 	InitWeapons();
 	InitializeRooms(g_Level);
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
-	InitBoss();
 
 }
 
@@ -2603,6 +2602,10 @@ void LoadRoom(const Room& roomToLoad)
 	SpawnInteractablesInRoom(roomToLoad);
 	if (!roomToLoad.isCleared) {
 		SpawnEnemies(roomToLoad.enemyShorthand);
+	}
+	if (roomToLoad.id == RoomID::bossRoom)
+	{
+		InitBoss();
 	}
 
 }
