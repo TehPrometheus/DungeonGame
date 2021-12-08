@@ -70,6 +70,7 @@ void Update(float elapsedSec)
 	UpdateBossAnimState(elapsedSec);
 	UpdateBossAIState(elapsedSec);
 	UpdateAnimationPos(elapsedSec, g_Player);
+	UpdateWeaponAnimation(elapsedSec);
 	UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
 	ProcessAnimState(g_Player, g_PlayerSprites);
@@ -108,6 +109,9 @@ void OnKeyDownEvent(SDL_Keycode key)
 		break;
 	case SDLK_k:
 		PlayerDebugInfo();
+		break;
+	case SDLK_y:
+		g_Player.weaponAnimation.enabled = !g_Player.weaponAnimation.enabled;
 		break;
 	case SDLK_o: 
 		{
@@ -632,8 +636,15 @@ void DrawPlayer(const Player& player, Sprite Sprites[])
 		srcRect.bottom = srcRect.height;
 		break;
 	}
+	if (player.facing == Direction::up || player.facing == Direction::left)
+	{
+		DrawWeaponAnimation();
+	}
 	DrawTexture(player.sprite.texture, player.animationPos, srcRect);
-
+	if (player.facing == Direction::right || player.facing == Direction::down)
+	{
+		DrawWeaponAnimation();
+	}
 }
 void UpdateAnimationPos(float elapsedSec, Player& player)
 {
@@ -956,6 +967,8 @@ void UseItem(Player& player, int itemslot)
 
 void UseWeapon(const Player& player)
 {
+	g_Player.weaponAnimation.isPlaying = true;
+	g_Player.weaponAnimation.elapsedTime = 0;
 	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
 	{
 		UseSword(player);
@@ -1258,7 +1271,7 @@ void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.5f);
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
-	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe", WeaponType::sword, 3.5f);
+	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe_up", WeaponType::sword, 3.5f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1280,6 +1293,85 @@ Weapon FetchWeapon(const std::string& name)
 	}
 	Weapon no_weapon{ InitializeWeapon("no_weapon", "not_found", WeaponType::sword, 0.0f) };
 	return no_weapon;
+}
+
+void UpdateWeaponAnimation(float elapsedSec)
+{
+	WeaponAnimation& animation{ g_Player.weaponAnimation };
+	const Weapon& weapon{ g_Player.weaponInventory[g_Player.selectedWeapon] };
+	if (!animation.isPlaying || !animation.enabled)
+	{
+		switch (g_Player.facing)
+		{
+		case Direction::up:
+			animation.position.bottom = g_Player.animationPos.bottom;
+			animation.position.left = g_Player.animationPos.left + weapon.texture.width / 3;
+			break;
+		case Direction::down:
+			animation.position.bottom = g_Player.animationPos.bottom - weapon.texture.width / 3;
+			animation.position.left = g_Player.animationPos.left - weapon.texture.width / 3;
+			break;
+		case Direction::right:
+			animation.position.bottom = g_Player.animationPos.bottom - weapon.texture.width / 3;
+			animation.position.left = g_Player.animationPos.left;
+			break;
+		case Direction::left:
+			animation.position.bottom = g_Player.animationPos.bottom - weapon.texture.width / 3;
+			animation.position.left = g_Player.animationPos.left - weapon.texture.width / 2;
+			break;
+		}
+	}
+	else if ((animation.isPlaying && animation.elapsedTime > animation.playTime) || weapon.type == WeaponType::bow)
+	{
+		animation.isPlaying = false;
+		animation.elapsedTime = 0;
+	}
+	else if (animation.isPlaying && weapon.type == WeaponType::sword)
+	{
+		const float cellSize{ 64.f };
+		const float animationDist{ 2 * cellSize };
+		animation.playTime = 0.15f;
+		switch (g_Player.facing)
+		{
+		case Direction::up:
+			animation.position.left = g_Player.animationPos.left - cellSize + animation.elapsedTime * animationDist / animation.playTime;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize/2;
+			break;
+		case Direction::down:
+			animation.position.left = g_Player.animationPos.left + cellSize - animation.elapsedTime * animationDist / animation.playTime;
+			animation.position.bottom = g_Player.animationPos.bottom - cellSize/2;
+			break;
+		case Direction::right:
+			animation.position.left = g_Player.animationPos.left + cellSize/2;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize - animation.elapsedTime * animationDist / animation.playTime;
+			break;
+		case Direction::left:
+			animation.position.left = g_Player.animationPos.left - cellSize/2;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize - animation.elapsedTime * animationDist / animation.playTime;
+			break;
+		}
+		animation.elapsedTime += elapsedSec;
+	}
+}
+void DrawWeaponAnimation()
+{
+	WeaponAnimation& animation{ g_Player.weaponAnimation };
+	switch (g_Player.facing)
+	{
+	case Direction::up:
+		DrawTexture(FetchTexture(g_Player.weaponInventory[g_Player.selectedWeapon].name + "_up"), animation.position);
+		break;
+	case Direction::left:
+		DrawTexture(FetchTexture(g_Player.weaponInventory[g_Player.selectedWeapon].name + "_left"), animation.position);
+		break;
+	case Direction::right:
+		DrawTexture(FetchTexture(g_Player.weaponInventory[g_Player.selectedWeapon].name + "_right"), animation.position);
+		break;
+	case Direction::down:
+		DrawTexture(FetchTexture(g_Player.weaponInventory[g_Player.selectedWeapon].name + "_down"), animation.position);
+		break;
+	}
+
 }
 #pragma endregion weaponHandling
 
@@ -2342,6 +2434,8 @@ void InitializeRooms(Room level[])
 	horizontalHallway1.layoutToLoad = "horizontal_hallway_1.room";
 	horizontalHallway1.leftDoorDestination = RoomID::combatRoom1;
 	horizontalHallway1.rightDoorDestination = RoomID::combatRoom2;
+	horizontalHallway1.enemyShorthand[0] = { "bat", GetIndex(3, 4) };
+	horizontalHallway1.enemyShorthand[1] = { "bat", GetIndex(3, 7) };
 
 	Room& combatRoom2 = level[6];
 	combatRoom2.id = RoomID::combatRoom2;
