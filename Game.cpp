@@ -48,7 +48,9 @@ void Draw()
 		DrawBoss();
 		break;
 	case GameStates::gameOverScreen:
-		DrawEndScreen();
+		break;
+	case GameStates::gameWonScreen:
+		DrawWonScreen();
 		break;
 	case GameStates::restarting:
 		break;
@@ -80,6 +82,8 @@ void Update(float elapsedSec)
 		OpenDoors(g_CellArr, g_GridSize);
 	}
 	SetGameOverScreen(g_Player);
+
+
 }
 
 void End()
@@ -330,7 +334,6 @@ bool IsOverlapping(const Rectf& rectangle1, const Rectf& rectangle2)
 
 	return true;
 }
-
 #pragma endregion utilFunctions
 
 #pragma region textureHandling
@@ -1228,6 +1231,11 @@ void UpdateProjectiles(float elapsedSec)
 		{
 			DestroyProjectile(g_Projectiles[i]);
 		}
+		if (IsPointInRect(g_Boss.dstRect, projectileTip))
+		{
+			g_Boss.health -= g_Projectiles[i].damage;
+			DestroyProjectile(g_Projectiles[i]);
+		}
 	}
 }
 void DestroyProjectile(Projectile& projectile)
@@ -1918,7 +1926,6 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 		}
 	}
 }
-
 void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDiffY, Enemy& enemy, int enemyIndex)
 {
 	Rectf spawnRect{ enemy.animationPos };
@@ -1946,7 +1953,6 @@ void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDif
 		CreateProjectile(spawnRect, "arrow_up", angle, projectileSpeed, enemy.damageOutput);
 	}
 }
-
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize)
 {
 	for (int index{}; index < enemyArrSize; ++index)
@@ -1973,10 +1979,11 @@ void InitBoss()
 {
 	g_Boss.AIState = BossAIStates::idle;
 	g_Boss.animState = AnimStates::idleRight;
-	g_Boss.maxHealth = 50.f;
+	g_Boss.maxHealth = 100.f;
 	g_Boss.health = g_Boss.maxHealth;
-	g_Boss.damageOutput = 5.f;
-	g_Boss.timeTracker = 0.f;
+	g_Boss.damageOutput = 0.5f;
+	g_Boss.decisionTimer = 0.f;
+	g_Boss.hitTimer = 0.f;
 	g_Boss.viewRange = 10;
 	g_Boss.chargeEndPoint.x = 0;
 	g_Boss.chargeEndPoint.y = 0;
@@ -2002,8 +2009,13 @@ void InitBoss()
 }
 void DrawBossHealth()
 {
-	if (g_Boss.health != g_Boss.maxHealth)
+	if (g_Boss.health != g_Boss.maxHealth && g_Boss.health > 0)
 	{
+		DrawHealthBar(g_Boss.dstRect, g_Boss.health, g_Boss.maxHealth);
+	}
+	else if (g_Boss.health <= 0)
+	{
+		g_Boss.health = 0;
 		DrawHealthBar(g_Boss.dstRect, g_Boss.health, g_Boss.maxHealth);
 	}
 }
@@ -2027,23 +2039,24 @@ void ChargeAtPlayer(float elapsedSec)
 	else
 	{
 		g_Boss.AIState = BossAIStates::idle;
-		g_Boss.timeTracker = 0;
+		g_Boss.decisionTimer = 0;
 	}
 
 }
 void UpdateBossAIState(float elapsedSec)
 {
 	if (g_CurrentRoom.id != RoomID::bossRoom) return;
-
-	g_Boss.timeTracker += elapsedSec;
-	float decisionTime{ 2.f }; // The time the boss takes to make a decision. Each decision corresponds to an AIState.
+	IsBossDead();
+	BossAttackPlayer(elapsedSec);
+	g_Boss.decisionTimer += elapsedSec;
+	float thinkingTime{ 2.f }; // The time the boss takes to make a decision. Each decision corresponds to an AIState.
 
 	switch (g_Boss.AIState)
 	{
 		case BossAIStates::idle :
 		{
 			g_Boss.animState = AnimStates::idleRight;
-			if (g_Boss.timeTracker > decisionTime)
+			if (g_Boss.decisionTimer > thinkingTime)
 			{
 				g_Boss.AIState = BossAIStates::charge;
 				g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
@@ -2053,7 +2066,7 @@ void UpdateBossAIState(float elapsedSec)
 				g_Boss.chargeStartPoint.x = g_Boss.dstRect.left;
 				g_Boss.chargeStartPoint.y = g_Boss.dstRect.bottom;
 
-				g_Boss.timeTracker = 0; 
+				g_Boss.decisionTimer = 0;
 			}
 			break;
 		}
@@ -2070,13 +2083,18 @@ void UpdateBossAIState(float elapsedSec)
 
 			break;
 		}
+		case BossAIStates::death:
+		{
+
+			break;
+		}
 	}
 
 }
 void UpdateBossAnimState(float elapsedSec)
 {
 	if (g_CurrentRoom.id != RoomID::bossRoom) return;
-
+	BossLookAtPlayer();
 	switch (g_Boss.animState)
 	{
 		case AnimStates::idleRight:
@@ -2089,6 +2107,19 @@ void UpdateBossAnimState(float elapsedSec)
 				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
 				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
 			}	
+			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			break;
+		}
+		case AnimStates::idleLeft:
+		{
+			g_Boss.sprite.texture = FetchTexture("boss_anim_idle_left");
+			g_Boss.sprite.frameTime = 1 / 6.0f;
+			g_Boss.sprite.accumulatedTime += elapsedSec;
+			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			{
+				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
+				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+			}
 			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
 			break;
 		}
@@ -2105,6 +2136,35 @@ void UpdateBossAnimState(float elapsedSec)
 			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
 			break;
 		}
+		case AnimStates::runLeft:
+		{
+			g_Boss.sprite.texture = FetchTexture("boss_anim_run_left");
+			g_Boss.sprite.frameTime = 1 / 20.0f;
+			g_Boss.sprite.accumulatedTime += elapsedSec;
+			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			{
+				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
+				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+			}
+			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			break;
+		}
+
+		case AnimStates::death:
+		{
+			g_Boss.sprite.texture = FetchTexture("boss_anim_death");
+			g_Boss.sprite.cols = 1;
+			g_Boss.sprite.frames = 1;
+			g_Boss.sprite.currentFrame = 0;
+			g_Boss.sprite.accumulatedTime = 0.0f;
+			g_Boss.sprite.frameTime = 1 / 8.0f;
+			g_Boss.srcRect.width = FetchTexture("boss_anim_death").width;
+			g_Boss.srcRect.height = FetchTexture("boss_anim_death").height;
+
+			break;
+
+		}
+
 	}
 }
 bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile)
@@ -2112,7 +2172,55 @@ bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile)
 	Rectf tile{ g_CellArr[tilesToScan[currentTile]].dstRect };
 	return IsOverlapping(g_Boss.dstRect, tile);
 }
+bool IsBossDead()
+{
+	if (g_Boss.health <= 0)
+	{
+		g_Boss.AIState = BossAIStates::death;
+		g_Boss.animState = AnimStates::death;
+		g_Game = GameStates::gameWonScreen;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+void BossAttackPlayer(float elapsedSec)
+{
+	g_Boss.hitTimer += elapsedSec;
+	float hitRate{ 0.5f };
 
+	if (IsOverlapping(g_Boss.dstRect, g_Player.dstRect) && g_Boss.hitTimer > hitRate)
+	{
+		g_Player.health -= g_Boss.damageOutput;
+		g_Boss.hitTimer -= hitRate;
+	}
+
+
+
+}
+void BossLookAtPlayer()
+{
+	if (g_Boss.dstRect.left < g_Player.dstRect.left && g_Boss.AIState == BossAIStates::idle)
+	{
+		g_Boss.animState = AnimStates::idleRight;
+	}
+	else if (g_Boss.dstRect.left > g_Player.dstRect.left && g_Boss.AIState == BossAIStates::idle)
+	{
+		g_Boss.animState = AnimStates::idleLeft;
+	}
+	else if (g_Boss.dstRect.left < g_Player.dstRect.left && g_Boss.AIState == BossAIStates::charge)
+	{
+		g_Boss.animState = AnimStates::runRight;
+	}
+	else if (g_Boss.dstRect.left > g_Player.dstRect.left && g_Boss.AIState == BossAIStates::charge)
+	{
+		g_Boss.animState = AnimStates::runLeft;
+	}
+
+
+}
 
 #pragma endregion enemyHandling
 
@@ -2565,16 +2673,16 @@ void DrawStartScreen()
 
 	DrawTexture(startingScreen, dstRect);
 }
-void DrawEndScreen()
+void DrawWonScreen()
 {
-	Texture endScreen{ FetchTexture("end_screen") };
+	Texture WonScreen{ FetchTexture("won_screen") };
 	Rectf dstRect{};
 	dstRect.width = g_WindowWidth;
 	dstRect.height = g_WindowHeight;
 	dstRect.left = 0;
 	dstRect.bottom = 0;
 
-	DrawTexture(endScreen, dstRect);
+	DrawTexture(WonScreen, dstRect);
 }
 void ClickStart(const SDL_MouseButtonEvent& e)
 {
