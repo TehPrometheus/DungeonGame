@@ -67,8 +67,12 @@
 {arrow_down.png,arrow_down}
 {arrow_left.png,arrow_left}
 {arrow_right.png,arrow_right}
+
 {crate.png,crate}
+
+{enemy_rusher.png,enemy_rusher}
 {enemy_archer.png,enemy_archer}
+
 {health_potion.png,health_potion}
 {speed_potion.png,speed_potion}
 {strength_potion.png,strength_potion}

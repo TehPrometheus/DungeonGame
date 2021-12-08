@@ -312,6 +312,7 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 // Declare your own functions here
 
 // Utils
+void PrintGameInfo();
 void PlayerDebugInfo();
 int GetIndex(const int rowIdx, const int colIdx, const int nrCols = g_NrCols); 
 int GetPlayerGridIndex(const Player& player, Cell cellArr[], const int arrSize);

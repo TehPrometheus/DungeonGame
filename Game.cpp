@@ -113,6 +113,9 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_y:
 		g_Player.weaponAnimation.enabled = !g_Player.weaponAnimation.enabled;
 		break;
+	case SDLK_i:
+		PrintGameInfo();
+		break;
 	case SDLK_o: 
 		{
 			// opens all doors. Remove when room clearing is implemented
@@ -209,6 +212,35 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 // Define your own functions here
 #pragma region utilFunctions
 // Utils
+void PrintGameInfo() {
+	std::cout << "Welcome to Cave Knight!\n\n";
+	std::cout << "The goal of the game is to get to the end of the dungeon and kill the boss,\n";
+	std::cout << "but to do that you will have to make your way through all the rooms first. \n\n";
+	std::cout << "Whenever you enter a room, all doors will be locked until you have killed\n";
+	std::cout << "all enemies within that room.\n\n";
+	std::cout << "Controls are as follows:\n";
+	std::cout << "- MOVING happens using the ZQSD/WASD buttons.\n";
+	std::cout << "- ATTACKING can be done by CLICKING, and will always be in the DIRECTION of\n";
+	std::cout << "  the MOUSE CURSOR. A light grey overlay next to your character will indicate\n";
+	std::cout << "  the tiles the character will hit.\n";
+	std::cout << "- INTERACTING with objects, such as going through doors or picking up items can\n";
+	std::cout << "  be done using the SPACE BAR.\n";
+	std::cout << "- USING ITEMS can be done by pressing NUMBER KEYS 1-5. If the item was already \n";
+	std::cout << "  selected you will use the item in the selected slot, otherwise you have to \n";
+	std::cout << "  press the button once to select the item, and a second time to actually use \n";
+	std::cout << "  it. The selected item is indicated by a red outline.\n";
+	std::cout << "- SWAPPING WEAPONS is done using the TAB KEY. The selected weapon is also indicated\n";
+	std::cout << "  by a red outline.\n\n";
+	std::cout << "The game has several potions that you can use, their effects are as follows:\n";
+	std::cout << "- RED POTION = HEALTH POTION: restores 10 hp.\n";
+	std::cout << "- YELLOW POTION = SPEED POTION: makes you run faster for 10 seconds.\n";
+	std::cout << "- GREEN POTION = REGENERATION POTION: heals you for 20 hp over 10 seconds.\n";
+	std::cout << "- LIGHT BLUE POTION = SHIELDING POTION: temporarily increases your health by 20hp.\n";
+	std::cout << "- DARK BLUE POTION = STRENGTH POTION: doubles your attack damage for 10 seconds.\n";
+	std::cout << "All potions with an effect that lasts for a duration of time cause an aura in the\n";
+	std::cout << "same colour. When this disappears, the potion's effect has faded.\n\n";
+	std::cout << "GOOD LUCK AND HAVE FUN EXPLORING OUR SMALL DUNGEON!\n";
+}
 void PlayerDebugInfo()
 {
 	int playerIndex{ GetPlayerGridIndex(g_Player, g_CellArr, g_GridSize) };
@@ -1808,6 +1840,10 @@ Enemy InitializeEnemy(std::string enemyName)
 	{
 		return InitializeEnemy(EnemyType::destructible, "crate", 4.0f, 0.0f, 0.0f, 0);
 	}	
+	if (enemyName == "rusher")
+	{
+		return InitializeEnemy(EnemyType::basic, "enemy_rusher", 1.f, 4.f, 0.2f, 10);
+	}
 	else
 		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
 }
@@ -2466,6 +2502,10 @@ void InitializeRooms(Room level[])
 	horizontalHallway3.layoutToLoad = "horizontal_hallway_3.room";
 	horizontalHallway3.leftDoorDestination = RoomID::combatRoom3;
 	horizontalHallway3.rightDoorDestination = RoomID::combatRoom1;
+	horizontalHallway3.enemyShorthand[0] = { "archer", GetIndex(4, 2) };
+	horizontalHallway3.enemyShorthand[1] = { "zombie", GetIndex(3, 5) };
+	horizontalHallway3.enemyShorthand[2] = { "zombie", GetIndex(5, 5) };
+	
 
 	Room& combatRoom3 = level[10];
 	combatRoom3.id = RoomID::combatRoom3;
@@ -2490,6 +2530,14 @@ void InitializeRooms(Room level[])
 	horizontalHallway4.layoutToLoad = "horizontal_hallway_4.room";
 	horizontalHallway4.rightDoorDestination = RoomID::combatRoom3;
 	horizontalHallway4.leftDoorDestination = RoomID::bossRoom;
+	horizontalHallway4.enemyShorthand[0] = { "rusher", GetIndex(3,4) };
+	horizontalHallway4.enemyShorthand[1] = { "rusher", GetIndex(5,4) };
+	horizontalHallway4.enemyShorthand[2] = { "rusher", GetIndex(3,6) };
+	horizontalHallway4.enemyShorthand[3] = { "rusher", GetIndex(5,6) };
+	horizontalHallway4.enemyShorthand[4] = { "rusher", GetIndex(3,5) };
+	horizontalHallway4.enemyShorthand[5] = { "rusher", GetIndex(5,5) };
+	horizontalHallway4.enemyShorthand[6] = { "rusher", GetIndex(3,3) };
+	horizontalHallway4.enemyShorthand[7] = { "rusher", GetIndex(5,3) };
 
 	Room& bossRoom = level[14];
 	bossRoom.id = RoomID::bossRoom;
