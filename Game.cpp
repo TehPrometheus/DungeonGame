@@ -2326,6 +2326,8 @@ void InitializeRooms(Room level[])
 	horizontalHallway1.layoutToLoad = "horizontal_hallway_1.room";
 	horizontalHallway1.leftDoorDestination = RoomID::combatRoom1;
 	horizontalHallway1.rightDoorDestination = RoomID::combatRoom2;
+	horizontalHallway1.enemyShorthand[0] = { "bat", GetIndex(3, 4) };
+	horizontalHallway1.enemyShorthand[1] = { "bat", GetIndex(3, 7) };
 
 	Room& combatRoom2 = level[6];
 	combatRoom2.id = RoomID::combatRoom2;
