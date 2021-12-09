@@ -237,7 +237,7 @@ void UpdateGame(float elapsedSec)
 		UpdatePlayerAnimState(g_PlayerSprites, elapsedSec);
 		UpdateProjectiles(elapsedSec);
 		UpdateStatusEffects(elapsedSec);
-		if (CheckRoomCleared(g_CurrentRoom))
+		if (CheckRoomCleared(g_CurrentRoom) && g_CurrentRoom.id != RoomID::bossRoom)
 		{
 			SetRoomCleared(g_CurrentRoom);
 			OpenDoors(g_CellArr, g_GridSize);
