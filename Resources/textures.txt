@@ -63,6 +63,11 @@
 {bow_up.png,bow_up}
 {bow_down.png,bow_down}
 
+{spear_right.png,spear_right}
+{spear_left.png,spear_left}
+{spear_up.png,spear_up}
+{spear_down.png,spear_down}
+
 {arrow_up.png,arrow_up}
 {arrow_down.png,arrow_down}
 {arrow_left.png,arrow_left}

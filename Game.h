@@ -53,7 +53,8 @@ enum class WeaponType
 {
 	none,
 	sword,
-	bow
+	bow,
+	spear
 };
 enum class ItemType
 {
@@ -214,6 +215,8 @@ struct Player
 	Weapon weaponInventory[g_WeaponInventorySize];
 	int selectedWeapon;
 	WeaponAnimation weaponAnimation;
+	bool isWeaponOnCooldown{ false };
+	float coolDownTimer;
 
 	StatusEffect effects[g_ItemInventorySize];
 };
@@ -352,17 +355,21 @@ void DrawHealthBar(Rectf entityRect, float health, float maxHealth);
 void DrawPlayerHealth(const Player& player);
 
 void CycleWeapons(Player& player);
+void ProcessWeaponCooldown(Player& player, float elapsedSec);
+void SetWeaponCooldown(const Weapon& weapon);
 
 void UseItem(Player& player, int itemslot);
 
-void UseWeapon(const Player& player);
+void UseWeapon(Player& player);
 void UseBow(const Player& player);
 void UseSword(const Player& player);
+void UseSpear(const Player& player);
 void AttackOnTiles(const Player& player, int indicesToScan[], int indicesAmount);
 
 void DrawReach(const Player& player);
 void DrawSwordReach(const Player& player);
 void DrawBowReach(const Player& player);
+void DrawSpearReach(const Player& player);
 
 void Interact(Player& player, Cell cellArr[], const int cellArrSize, Room& currentRoom);
 void PickUpInteractable(int index, int location);
