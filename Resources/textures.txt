@@ -43,7 +43,8 @@
 {zombie_idle_anim.png,zombie_idle_anim}
 {zombie_run_right_anim.png,zombie_run_right_anim}
 {zombie_run_left_anim.png,zombie_run_left_anim}
-{won_screen.png,won_screen}
+{game_won_screen.png,game_won_screen}
+{game_over_screen.png,game_over_screen}
 {starting_screen.png,starting_screen}
 {weapon_inventory.png,weapon_inventory}
 

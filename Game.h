@@ -37,8 +37,8 @@ enum class GameStates
 {
 	startScreen,
 	playing,
-	gameOverScreen,
-	gameWonScreen,
+	gameOver,
+	gameWon,
 	restarting
 };
 
@@ -247,8 +247,9 @@ struct Boss // WORK IN PROGRESS
 	float health;
 	float maxHealth;
 	float damageOutput;
-	float decisionTimer;
-	float hitTimer;
+	float bossAIStateTimer;
+	float bossAttackPlayerTimer;
+	float bossPlayerAngle{};
 	int viewRange;
 };
 struct EnemyShorthand
@@ -284,7 +285,7 @@ struct Level
 Room g_Level[15];
 Room g_CurrentRoom{};
 Boss g_Boss{};
-GameStates g_Game{ GameStates::playing };
+GameStates g_Game{ GameStates::startScreen };
 Weapon g_Weapons[g_WeaponsInGame]{};
 Item g_Items[g_ItemsInGame]{};
 Interactable g_Interactables[g_InteractablesInGame]{};
@@ -314,6 +315,16 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_WhiteTransparent{1.f, 1.f, 1.f, 0.1f};
 
 // Declare your own functions here
+
+// Game Handling
+void InitGame();
+void DrawGame();
+void UpdateGame(float elapsedSec);
+
+void DrawStartScreen();
+void DrawEndScreen();
+void ClickStart(const SDL_MouseButtonEvent& e);
+void SetEndScreen(Boss boss, Player& player);
 
 // Utils
 void PrintGameInfo();
@@ -347,6 +358,8 @@ void SetObstacles(Cell cellArr[], int nrRows, int nrCols); //sets all appropriat
 void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[]);
 void DrawPlayer(const Player& player, Sprite Sprites[]);
 void UpdateAnimationPos(float elapsedSec, Player& player);
+void InitPlayerAnimState(Sprite Sprites[]);
+void UpdatePlayerAnimState(Sprite Sprites[], float elapsedSec);
 
 void DrawItemInventory(const Player& player);
 void DrawWeaponInventory(const Player& player);
@@ -434,17 +447,21 @@ void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDif
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize);
 
 // Boss Handling
+bool IsBossDead();
+bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
+
+float BossDistanceToChargePoint();
+float GetAngle(Boss boss, Player player);
+
 void InitBoss();
 void DrawBoss();
+void DrawBossHealth();
 void UpdateBossAnimState(float elapsedSec);
 void UpdateBossAIState(float elapsedSec);
 void ChargeAtPlayer(float elapsedSec);
-float BossDistanceToChargePoint();
-bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
-bool IsBossDead();
 void BossAttackPlayer(float elapsedSec);
 void BossLookAtPlayer();
-bool IsBossBelowHalfHealth();
+void PrepareToCharge();
 
 
 
@@ -469,15 +486,7 @@ void SetRoomCleared(Room& currentRoom);
 
 // Level Handling
 
-// Sprite Handling
-void InitPlayerSprites(Sprite Sprites[]);
-void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec);
 
-// Game Handling
-void DrawStartScreen();
-void DrawWonScreen();
-void ClickStart(const SDL_MouseButtonEvent& e);
-void SetGameOverScreen(Player& player);
 
 #pragma endregion ownDeclarations
 

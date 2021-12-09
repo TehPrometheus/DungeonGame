@@ -9,85 +9,21 @@
 #pragma region gameFunctions											
 void Start()
 {
-	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
-	InitItems();
-	InitWeapons();
-	InitializeRooms(g_Level);
-	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
+	InitGame();
 }
 
 void Draw()
 {
-	ClearBackground(0,0,0);
-
-	switch (g_Game)
-	{
-	case GameStates::startScreen:
-		DrawStartScreen();
-		
-		break;
-	case GameStates::playing:
-		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
-		DrawReach(g_Player);
-		DrawStatusEffects(g_Player);
-		DrawInteractables();
-		DrawProjectiles();
-		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
-		DrawEnemyHealthBars(g_EnemyArr);
-		DrawPlayer(g_Player, g_PlayerSprites);
-		DrawWeaponInventory(g_Player);
-		DrawItemInventory(g_Player);
-		DrawBoss();
-		DrawPlayerHealth(g_Player);
-		break;
-	case GameStates::gameOverScreen:
-		std::cerr << "gameoverscreen" << std::endl;
-
-		break;
-	case GameStates::gameWonScreen:
-		std::cerr << "gamewonscreen" << std::endl;
-
-		DrawWonScreen();
-		break;
-	case GameStates::restarting:
-		break;
-	default:
-		break;
-	}
-
-
-	//Comment this out to disable the debug grid
-	
-	//DrawDebugGrid(g_CellArr, g_NrRows, g_NrCols);
-
+	DrawGame();
 }
 
 void Update(float elapsedSec)
 {
-	UpdateBossAnimState(elapsedSec);
-	UpdateBossAIState(elapsedSec);
-	UpdateAnimationPos(elapsedSec, g_Player);
-	UpdateWeaponAnimation(elapsedSec);
-	ProcessWeaponCooldown(g_Player, elapsedSec);
-	UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
-	ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites,elapsedSec);
-	ProcessAnimState(g_Player, g_PlayerSprites);
-	UpdatePlayerSprites(g_PlayerSprites, elapsedSec);
-	UpdateProjectiles(elapsedSec);
-	UpdateStatusEffects(elapsedSec);
-	if (CheckRoomCleared(g_CurrentRoom)) 
-	{
-		SetRoomCleared(g_CurrentRoom);
-		OpenDoors(g_CellArr, g_GridSize);
-	}
-	SetGameOverScreen(g_Player);
-
-
+	UpdateGame(elapsedSec);
 }
 
 void End()
 {
-	// free game resources here
 	DeleteTextures();
 }
 #pragma endregion gameFunctions
@@ -208,6 +144,172 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 #pragma region ownDefinitions
 // Define your own functions here
+#pragma region gameHandling
+void InitGame()
+{
+	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
+	InitItems();
+	InitWeapons();
+	InitializeRooms(g_Level);
+	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
+}
+void DrawGame()
+{
+	ClearBackground(0, 0, 0);
+
+	switch (g_Game)
+	{
+	case GameStates::startScreen:
+	{
+		DrawStartScreen();
+		break;
+	}
+	case GameStates::playing:
+	{
+		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
+		DrawReach(g_Player);
+		DrawStatusEffects(g_Player);
+		DrawInteractables();
+		DrawProjectiles();
+		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemyHealthBars(g_EnemyArr);
+		DrawBoss();
+		DrawPlayer(g_Player, g_PlayerSprites);
+		DrawWeaponInventory(g_Player);
+		DrawItemInventory(g_Player);
+		DrawPlayerHealth(g_Player);
+		break;
+	}
+	case GameStates::gameOver:
+	{
+		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
+		DrawReach(g_Player);
+		DrawStatusEffects(g_Player);
+		DrawInteractables();
+		DrawProjectiles();
+		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemyHealthBars(g_EnemyArr);
+		DrawBoss();
+		DrawPlayer(g_Player, g_PlayerSprites);
+		DrawWeaponInventory(g_Player);
+		DrawItemInventory(g_Player);
+		DrawPlayerHealth(g_Player);
+		DrawEndScreen();
+		break;
+	}
+	case GameStates::gameWon:
+	{
+		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
+		DrawReach(g_Player);
+		DrawStatusEffects(g_Player);
+		DrawInteractables();
+		DrawProjectiles();
+		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemyHealthBars(g_EnemyArr);
+		DrawBoss();
+		DrawPlayer(g_Player, g_PlayerSprites);
+		DrawWeaponInventory(g_Player);
+		DrawItemInventory(g_Player);
+		DrawPlayerHealth(g_Player);
+		DrawEndScreen();
+		break;
+	}
+	case GameStates::restarting:
+		break;
+	}
+}
+void UpdateGame(float elapsedSec)
+{
+	switch (g_Game)
+	{
+	case GameStates::startScreen:
+
+		break;
+	case GameStates::playing:
+		UpdateBossAnimState(elapsedSec);
+		UpdateBossAIState(elapsedSec);
+		UpdateAnimationPos(elapsedSec, g_Player);
+		UpdateWeaponAnimation(elapsedSec);
+		UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
+		ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites, elapsedSec);
+		ProcessAnimState(g_Player, g_PlayerSprites);
+		UpdatePlayerAnimState(g_PlayerSprites, elapsedSec);
+		UpdateProjectiles(elapsedSec);
+		UpdateStatusEffects(elapsedSec);
+		if (CheckRoomCleared(g_CurrentRoom))
+		{
+			SetRoomCleared(g_CurrentRoom);
+			OpenDoors(g_CellArr, g_GridSize);
+		}
+		SetEndScreen(g_Boss, g_Player);
+		break;
+	case GameStates::gameOver:
+		break;
+	case GameStates::gameWon:
+		break;
+	case GameStates::restarting:
+		break;
+	default:
+		break;
+	}
+}
+void DrawStartScreen()
+{
+	Texture startingScreen{ FetchTexture("starting_screen") };
+	Rectf dstRect{};
+	dstRect.width = g_WindowWidth;
+	dstRect.height = g_WindowHeight;
+	dstRect.left = 0;
+	dstRect.bottom = 0;
+
+	DrawTexture(startingScreen, dstRect);
+}
+void DrawEndScreen()
+{
+	Texture endScreen{};
+	if (g_Game == GameStates::gameOver)
+	{
+		endScreen = FetchTexture("game_over_screen");
+	}
+	if (g_Game == GameStates::gameWon)
+	{
+		endScreen = FetchTexture("game_won_screen");
+	}
+	Rectf dstRect{};
+	dstRect.width = g_WindowWidth;
+	dstRect.height = g_WindowHeight;
+	dstRect.left = 0;
+	dstRect.bottom = 0;
+
+	DrawTexture(endScreen, dstRect);
+
+}
+void ClickStart(const SDL_MouseButtonEvent& e)
+{
+	if (g_Game == GameStates::startScreen)
+	{
+		Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
+		Rectf startButton{ 516.f,63.f, 246.f,81.f };
+
+		if (IsPointInRect(startButton, mousePos))
+		{
+			g_Game = GameStates::playing;
+		}
+	}
+}
+void SetEndScreen(Boss boss, Player& player)
+{
+	if (player.health <= 0.f)
+	{
+		g_Game = GameStates::gameOver;
+	}
+	else if (g_CurrentRoom.id == RoomID::bossRoom && boss.health <= 0.f)
+	{
+		g_Game = GameStates::gameWon;
+	}
+}
+#pragma endregion gameHandling
+
 #pragma region utilFunctions
 // Utils
 void PrintGameInfo() {
@@ -596,7 +698,7 @@ void InitPlayer(Player& player, Cell cellArr[], Sprite Sprites[])
 {
 	int idle{ 0 };
 
-	InitPlayerSprites(Sprites);
+	InitPlayerAnimState(Sprites);
 	player.sprite.texture = Sprites[idle].texture;
 	player.animState = AnimStates::idleRight;
 	player.dstRect = cellArr[97].dstRect; // 97 is starting pos in starting room
@@ -699,6 +801,161 @@ void UpdateAnimationPos(float elapsedSec, Player& player)
 	else
 	{
 		player.animationPos.bottom = player.dstRect.bottom;
+	}
+}
+void InitPlayerAnimState(Sprite Sprites[])
+{
+	// initialize idle right anim
+	Sprites[int(AnimStates::idleRight)].texture = FetchTexture("knight_idle_anim_right");
+	Sprites[int(AnimStates::idleRight)].cols = 4;
+	Sprites[int(AnimStates::idleRight)].frames = 4;
+	Sprites[int(AnimStates::idleRight)].currentFrame = 0;
+	Sprites[int(AnimStates::idleRight)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleRight)].frameTime = 1 / 8.0f;	
+
+	// initialize idle left anim
+	Sprites[int(AnimStates::idleLeft)].texture = FetchTexture("knight_idle_anim_left");
+	Sprites[int(AnimStates::idleLeft)].cols = 4;
+	Sprites[int(AnimStates::idleLeft)].frames = 4;
+	Sprites[int(AnimStates::idleLeft)].currentFrame = 0;
+	Sprites[int(AnimStates::idleLeft)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleLeft)].frameTime = 1 / 8.0f;
+
+	// initialize idle up anim
+	Sprites[int(AnimStates::idleUp)].texture = FetchTexture("knight_idle_anim_up");
+	Sprites[int(AnimStates::idleUp)].cols = 4;
+	Sprites[int(AnimStates::idleUp)].frames = 4;
+	Sprites[int(AnimStates::idleUp)].currentFrame = 0;
+	Sprites[int(AnimStates::idleUp)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleUp)].frameTime = 1 / 8.0f;
+
+	// initialize idle down anim
+	Sprites[int(AnimStates::idleDown)].texture = FetchTexture("knight_idle_anim_down");
+	Sprites[int(AnimStates::idleDown)].cols = 4;
+	Sprites[int(AnimStates::idleDown)].frames = 4;
+	Sprites[int(AnimStates::idleDown)].currentFrame = 0;
+	Sprites[int(AnimStates::idleDown)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::idleDown)].frameTime = 1 / 8.0f;
+
+	// initialize run right anim
+	Sprites[int(AnimStates::runRight)].texture = FetchTexture("knight_run_right_anim");
+	Sprites[int(AnimStates::runRight)].cols = 4;
+	Sprites[int(AnimStates::runRight)].frames = 4;
+	Sprites[int(AnimStates::runRight)].currentFrame = 0;
+	Sprites[int(AnimStates::runRight)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runRight)].frameTime = 1 / 15.0f;
+
+	// initialize run down anim
+	Sprites[int(AnimStates::runDown)].texture = FetchTexture("knight_run_down_anim");
+	Sprites[int(AnimStates::runDown)].cols = 4;
+	Sprites[int(AnimStates::runDown)].frames = 4;
+	Sprites[int(AnimStates::runDown)].currentFrame = 0;
+	Sprites[int(AnimStates::runDown)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runDown)].frameTime = 1 / 15.0f;
+
+	// initialize run up anim
+	Sprites[int(AnimStates::runUp)].texture = FetchTexture("knight_run_up_anim");
+	Sprites[int(AnimStates::runUp)].cols = 4;
+	Sprites[int(AnimStates::runUp)].frames = 4;
+	Sprites[int(AnimStates::runUp)].currentFrame = 0;
+	Sprites[int(AnimStates::runUp)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runUp)].frameTime = 1 / 15.0f;
+
+	// initialize run left anim
+	Sprites[int(AnimStates::runLeft)].texture = FetchTexture("knight_run_left_anim");
+	Sprites[int(AnimStates::runLeft)].cols = 4;
+	Sprites[int(AnimStates::runLeft)].frames = 4;
+	Sprites[int(AnimStates::runLeft)].currentFrame = 0;
+	Sprites[int(AnimStates::runLeft)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::runLeft)].frameTime = 1 / 15.0f;
+
+	// initialize hit anim
+	Sprites[int(AnimStates::hit)].texture = FetchTexture("knight_hit_anim");
+	Sprites[int(AnimStates::hit)].cols = 1;
+	Sprites[int(AnimStates::hit)].frames = 1;
+	Sprites[int(AnimStates::hit)].currentFrame = 0;
+	Sprites[int(AnimStates::hit)].accumulatedTime = 0.0f;
+	Sprites[int(AnimStates::hit)].frameTime = 1 / 1.0f;
+
+
+}
+void UpdatePlayerAnimState(Sprite Sprites[], float elapsedSec)
+{
+	switch (g_Player.animState)
+	{
+	case AnimStates::idleRight:
+		Sprites[int(AnimStates::idleRight)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleRight)].accumulatedTime > Sprites[int(AnimStates::idleRight)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleRight)].currentFrame %= Sprites[int(AnimStates::idleRight)].frames;
+			Sprites[int(AnimStates::idleRight)].accumulatedTime -= Sprites[int(AnimStates::idleRight)].frameTime;
+		}
+		break;
+	case AnimStates::idleUp:
+		Sprites[int(AnimStates::idleUp)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleUp)].accumulatedTime > Sprites[int(AnimStates::idleUp)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleUp)].currentFrame %= Sprites[int(AnimStates::idleUp)].frames;
+			Sprites[int(AnimStates::idleUp)].accumulatedTime -= Sprites[int(AnimStates::idleUp)].frameTime;
+		}
+		break;
+	case AnimStates::idleLeft:
+		Sprites[int(AnimStates::idleLeft)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleLeft)].accumulatedTime > Sprites[int(AnimStates::idleLeft)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleLeft)].currentFrame %= Sprites[int(AnimStates::idleLeft)].frames;
+			Sprites[int(AnimStates::idleLeft)].accumulatedTime -= Sprites[int(AnimStates::idleLeft)].frameTime;
+		}
+		break;
+	case AnimStates::idleDown:
+		Sprites[int(AnimStates::idleDown)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::idleDown)].accumulatedTime > Sprites[int(AnimStates::idleDown)].frameTime)
+		{
+			++Sprites[int(AnimStates::idleDown)].currentFrame %= Sprites[int(AnimStates::idleDown)].frames;
+			Sprites[int(AnimStates::idleDown)].accumulatedTime -= Sprites[int(AnimStates::idleDown)].frameTime;
+		}
+		break;
+	case AnimStates::runRight:
+		Sprites[int(AnimStates::runRight)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runRight)].accumulatedTime > Sprites[int(AnimStates::runRight)].frameTime)
+		{
+			++Sprites[int(AnimStates::runRight)].currentFrame %= Sprites[int(AnimStates::runRight)].frames;
+			Sprites[int(AnimStates::runRight)].accumulatedTime -= Sprites[int(AnimStates::runRight)].frameTime;
+		}
+		break;
+	case AnimStates::runLeft:
+		Sprites[int(AnimStates::runLeft)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runLeft)].accumulatedTime > Sprites[int(AnimStates::runLeft)].frameTime)
+		{
+			++Sprites[int(AnimStates::runLeft)].currentFrame %= Sprites[int(AnimStates::runLeft)].frames;
+			Sprites[int(AnimStates::runLeft)].accumulatedTime -= Sprites[int(AnimStates::runLeft)].frameTime;
+		}
+		break;
+	case AnimStates::runDown:
+		Sprites[int(AnimStates::runDown)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runDown)].accumulatedTime > Sprites[int(AnimStates::runDown)].frameTime)
+		{
+			++Sprites[int(AnimStates::runDown)].currentFrame %= Sprites[int(AnimStates::runDown)].frames;
+			Sprites[int(AnimStates::runDown)].accumulatedTime -= Sprites[int(AnimStates::runDown)].frameTime;
+		}
+		break;
+	case AnimStates::runUp:
+		Sprites[int(AnimStates::runUp)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::runUp)].accumulatedTime > Sprites[int(AnimStates::runUp)].frameTime)
+		{
+			++Sprites[int(AnimStates::runUp)].currentFrame %= Sprites[int(AnimStates::runUp)].frames;
+			Sprites[int(AnimStates::runUp)].accumulatedTime -= Sprites[int(AnimStates::runUp)].frameTime;
+		}
+		break;
+	case AnimStates::hit:
+		Sprites[int(AnimStates::hit)].accumulatedTime += elapsedSec;
+		if (Sprites[int(AnimStates::hit)].accumulatedTime > Sprites[int(AnimStates::hit)].frameTime)
+		{
+			++Sprites[int(AnimStates::hit)].currentFrame %= Sprites[int(AnimStates::hit)].frames;
+			Sprites[int(AnimStates::hit)].accumulatedTime -= Sprites[int(AnimStates::hit)].frameTime;
+		}
+		break;
+
 	}
 }
 
@@ -2271,6 +2528,35 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 }
 
 // Boss Handling
+bool IsBossDead()
+{
+	if (g_Boss.health <= 0)
+	{
+		g_Boss.AIState = BossAIStates::death;
+		g_Boss.animState = AnimStates::death;
+		g_Game = GameStates::gameWon;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile)
+{
+	Rectf tile{ g_CellArr[tilesToScan[currentTile]].dstRect };
+	return IsOverlapping(g_Boss.dstRect, tile);
+}
+
+float BossDistanceToChargePoint()
+{
+	return sqrtf(powf((g_Boss.dstRect.left - g_Boss.chargeEndPoint.x), 2) + powf(g_Boss.dstRect.bottom - g_Boss.chargeEndPoint.y, 2));
+}
+float GetAngle(Boss boss, Player player)
+{
+	return atan2(boss.delta.y , boss.delta.x);
+}
+
 void InitBoss()
 {
 	g_Boss.AIState = BossAIStates::idle;
@@ -2278,12 +2564,13 @@ void InitBoss()
 	g_Boss.maxHealth = 300.f;
 	g_Boss.health = g_Boss.maxHealth;
 	g_Boss.damageOutput = 0.8f;
-	g_Boss.decisionTimer = 0.f;
-	g_Boss.hitTimer = 0.f;
+	g_Boss.bossAIStateTimer = 0.f;
+	g_Boss.bossAttackPlayerTimer = 0.f;
+	g_Boss.bossPlayerAngle = 0.f;
 	g_Boss.viewRange = 10;
 	g_Boss.chargeEndPoint.x = 0;
 	g_Boss.chargeEndPoint.y = 0;
-	g_Boss.speed = 20.f;
+	g_Boss.speed = 500.f;
 
 	g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
 	g_Boss.sprite.cols = 4;
@@ -2321,21 +2608,18 @@ void DrawBoss()
 	DrawBossHealth();
 	DrawTexture(g_Boss.sprite.texture, g_Boss.dstRect, g_Boss.srcRect);
 }
-float BossDistanceToChargePoint()
-{
-	return sqrt(powf(g_Boss.dstRect.left - g_Boss.chargeEndPoint.x,2)+ powf(g_Boss.dstRect.bottom - g_Boss.chargeEndPoint.y , 2));
-}
 void ChargeAtPlayer(float elapsedSec)
 {
-	if (BossDistanceToChargePoint() > 3.f)
+	float minDistance{ 3.f };
+	if ( BossDistanceToChargePoint() > minDistance)
 	{
-		g_Boss.dstRect.left -= g_Boss.delta.x * elapsedSec;
-		g_Boss.dstRect.bottom -= g_Boss.delta.y * elapsedSec;
+		g_Boss.dstRect.left -= (g_Boss.speed * cosf(g_Boss.bossPlayerAngle)) * elapsedSec;
+		g_Boss.dstRect.bottom -= (g_Boss.speed * sinf(g_Boss.bossPlayerAngle)) * elapsedSec;
 	}
 	else
 	{
 		g_Boss.AIState = BossAIStates::idle;
-		g_Boss.decisionTimer = 0;
+		g_Boss.bossAIStateTimer = 0;
 	}
 
 }
@@ -2344,48 +2628,45 @@ void UpdateBossAIState(float elapsedSec)
 	if (g_CurrentRoom.id != RoomID::bossRoom) return;
 	IsBossDead();
 	BossAttackPlayer(elapsedSec);
-	g_Boss.decisionTimer += elapsedSec;
+	g_Boss.bossAIStateTimer += elapsedSec;
 	float thinkingTime{1.f};
 	int randInt{1 + rand() % 100 };
 
-	int chargeChance{ 65 };
+	int regenChance{ 10 };
 	int spawnMinionsChance{ 15 };
-	int regenChance{ 5 };
+	int chargeChance{ 65 };
 	switch (g_Boss.AIState)
 	{
 		case BossAIStates::idle:
 		{
-			if (g_Boss.decisionTimer > thinkingTime)
+			if (g_Boss.bossAIStateTimer > thinkingTime)
 			{
-				if (randInt > 0 && randInt < regenChance)
+				if (randInt > 0 && randInt <= regenChance)
 				{
-					g_Boss.AIState = BossAIStates::regenerate;
-
-					g_Boss.decisionTimer = 0;
+					if (g_Boss.health / g_Boss.maxHealth <= 0.8f)
+					{
+						g_Boss.AIState = BossAIStates::regenerate;
+						g_Boss.bossAIStateTimer = 0;
+					}
 					break;
 				}
-				else if (randInt > regenChance && randInt < spawnMinionsChance)
+				else if (randInt > regenChance && randInt <= spawnMinionsChance)
 				{
 					g_Boss.AIState = BossAIStates::spawnMinions;
-
-					g_Boss.decisionTimer = 0;
+					g_Boss.bossAIStateTimer = 0;
 
 					break;
 				}
-				else if (randInt > spawnMinionsChance && randInt < chargeChance)
+				else if (randInt > spawnMinionsChance && randInt <= chargeChance)
 				{
+					PrepareToCharge();
 					g_Boss.AIState = BossAIStates::charge;
-					g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
-					g_Boss.delta.y = g_Boss.dstRect.bottom - g_Player.dstRect.bottom;
-					g_Boss.chargeEndPoint.x = g_Player.dstRect.left;
-					g_Boss.chargeEndPoint.y = g_Player.dstRect.bottom;
-					g_Boss.decisionTimer = 0;
+					g_Boss.bossAIStateTimer = 0;
 					break;
 				}
 				else
 				{
-					g_Boss.AIState = BossAIStates::charge;
-					g_Boss.decisionTimer = 0;
+					g_Boss.bossAIStateTimer = 0;
 					break;
 				}
 			}
@@ -2394,25 +2675,20 @@ void UpdateBossAIState(float elapsedSec)
 		case BossAIStates::charge:
 		{
 			ChargeAtPlayer(elapsedSec);
-std::cerr << "boss is charging!" << std::endl;
 			break;
 		}
 		case BossAIStates::spawnMinions:
 		{
 			const int nrOfMinions{ g_MaxEnemiesPerRoom };
-			EnemyShorthand minions[g_MaxEnemiesPerRoom]{ {"rusher",18 } ,{"rusher",19 } , {"rusher",20 } , {"rusher",21 } , {"rusher",22 } };
+			EnemyShorthand minions[g_MaxEnemiesPerRoom]
+				{ {"rusher",18 } , {"rusher",19 } , {"rusher",20 } , {"rusher",21 } , {"rusher",22 } };
 			SpawnEnemies(minions);
-std::cerr << "boss spawned minions!" << std::endl;
 			g_Boss.AIState = BossAIStates::idle;
 			break;
 		}
 		case BossAIStates::regenerate:
 		{
-			if (g_Boss.health != g_Boss.maxHealth)
-			{
-				g_Boss.health += 0.2f * g_Boss.maxHealth;	
-			}
-std::cerr << "boss healed himself!" << std::endl;
+			g_Boss.health += 0.2f * g_Boss.maxHealth;	
 			g_Boss.AIState = BossAIStates::idle;
 			break;
 		}
@@ -2423,6 +2699,14 @@ std::cerr << "boss healed himself!" << std::endl;
 		}
 	}
 
+}
+void PrepareToCharge()
+{
+	g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
+	g_Boss.delta.y = g_Boss.dstRect.bottom - g_Player.dstRect.bottom;
+	g_Boss.chargeEndPoint.x = g_Player.dstRect.left;
+	g_Boss.chargeEndPoint.y = g_Player.dstRect.bottom;
+	g_Boss.bossPlayerAngle = GetAngle(g_Boss, g_Player);
 }
 void UpdateBossAnimState(float elapsedSec)
 {
@@ -2500,38 +2784,16 @@ void UpdateBossAnimState(float elapsedSec)
 
 	}
 }
-bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile)
-{
-	Rectf tile{ g_CellArr[tilesToScan[currentTile]].dstRect };
-	return IsOverlapping(g_Boss.dstRect, tile);
-}
-bool IsBossDead()
-{
-	if (g_Boss.health <= 0)
-	{
-		g_Boss.AIState = BossAIStates::death;
-		g_Boss.animState = AnimStates::death;
-		g_Game = GameStates::gameWonScreen;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
 void BossAttackPlayer(float elapsedSec)
 {
-	g_Boss.hitTimer += elapsedSec;
+	g_Boss.bossAttackPlayerTimer += elapsedSec;
 	float hitRate{ 0.5f };
 
-	if (IsOverlapping(g_Boss.dstRect, g_Player.dstRect) && g_Boss.hitTimer > hitRate)
+	if (IsOverlapping(g_Boss.dstRect, g_Player.dstRect) && g_Boss.bossAttackPlayerTimer > hitRate)
 	{
 		g_Player.health -= g_Boss.damageOutput;
-		g_Boss.hitTimer = 0;
+		g_Boss.bossAttackPlayerTimer = 0;
 	}
-
-
-
 }
 void BossLookAtPlayer()
 {
@@ -2863,198 +3125,5 @@ void SetRoomCleared(Room& currentRoom)
 
 #pragma endregion levelHandling
 
-#pragma region spriteHandling
-void InitPlayerSprites(Sprite Sprites[])
-{
-	// initialize idle right anim
-	Sprites[int(AnimStates::idleRight)].texture = FetchTexture("knight_idle_anim_right");
-	Sprites[int(AnimStates::idleRight)].cols = 4;
-	Sprites[int(AnimStates::idleRight)].frames = 4;
-	Sprites[int(AnimStates::idleRight)].currentFrame = 0;
-	Sprites[int(AnimStates::idleRight)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::idleRight)].frameTime = 1 / 8.0f;	
-
-	// initialize idle left anim
-	Sprites[int(AnimStates::idleLeft)].texture = FetchTexture("knight_idle_anim_left");
-	Sprites[int(AnimStates::idleLeft)].cols = 4;
-	Sprites[int(AnimStates::idleLeft)].frames = 4;
-	Sprites[int(AnimStates::idleLeft)].currentFrame = 0;
-	Sprites[int(AnimStates::idleLeft)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::idleLeft)].frameTime = 1 / 8.0f;
-
-	// initialize idle up anim
-	Sprites[int(AnimStates::idleUp)].texture = FetchTexture("knight_idle_anim_up");
-	Sprites[int(AnimStates::idleUp)].cols = 4;
-	Sprites[int(AnimStates::idleUp)].frames = 4;
-	Sprites[int(AnimStates::idleUp)].currentFrame = 0;
-	Sprites[int(AnimStates::idleUp)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::idleUp)].frameTime = 1 / 8.0f;
-
-	// initialize idle down anim
-	Sprites[int(AnimStates::idleDown)].texture = FetchTexture("knight_idle_anim_down");
-	Sprites[int(AnimStates::idleDown)].cols = 4;
-	Sprites[int(AnimStates::idleDown)].frames = 4;
-	Sprites[int(AnimStates::idleDown)].currentFrame = 0;
-	Sprites[int(AnimStates::idleDown)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::idleDown)].frameTime = 1 / 8.0f;
-
-	// initialize run right anim
-	Sprites[int(AnimStates::runRight)].texture = FetchTexture("knight_run_right_anim");
-	Sprites[int(AnimStates::runRight)].cols = 4;
-	Sprites[int(AnimStates::runRight)].frames = 4;
-	Sprites[int(AnimStates::runRight)].currentFrame = 0;
-	Sprites[int(AnimStates::runRight)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::runRight)].frameTime = 1 / 15.0f;
-
-	// initialize run down anim
-	Sprites[int(AnimStates::runDown)].texture = FetchTexture("knight_run_down_anim");
-	Sprites[int(AnimStates::runDown)].cols = 4;
-	Sprites[int(AnimStates::runDown)].frames = 4;
-	Sprites[int(AnimStates::runDown)].currentFrame = 0;
-	Sprites[int(AnimStates::runDown)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::runDown)].frameTime = 1 / 15.0f;
-
-	// initialize run up anim
-	Sprites[int(AnimStates::runUp)].texture = FetchTexture("knight_run_up_anim");
-	Sprites[int(AnimStates::runUp)].cols = 4;
-	Sprites[int(AnimStates::runUp)].frames = 4;
-	Sprites[int(AnimStates::runUp)].currentFrame = 0;
-	Sprites[int(AnimStates::runUp)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::runUp)].frameTime = 1 / 15.0f;
-
-	// initialize run left anim
-	Sprites[int(AnimStates::runLeft)].texture = FetchTexture("knight_run_left_anim");
-	Sprites[int(AnimStates::runLeft)].cols = 4;
-	Sprites[int(AnimStates::runLeft)].frames = 4;
-	Sprites[int(AnimStates::runLeft)].currentFrame = 0;
-	Sprites[int(AnimStates::runLeft)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::runLeft)].frameTime = 1 / 15.0f;
-
-	// initialize hit anim
-	Sprites[int(AnimStates::hit)].texture = FetchTexture("knight_hit_anim");
-	Sprites[int(AnimStates::hit)].cols = 1;
-	Sprites[int(AnimStates::hit)].frames = 1;
-	Sprites[int(AnimStates::hit)].currentFrame = 0;
-	Sprites[int(AnimStates::hit)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::hit)].frameTime = 1 / 1.0f;
-
-
-}
-void UpdatePlayerSprites(Sprite Sprites[], float elapsedSec)
-{
-	switch (g_Player.animState)
-	{
-	case AnimStates::idleRight:
-		Sprites[int(AnimStates::idleRight)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::idleRight)].accumulatedTime > Sprites[int(AnimStates::idleRight)].frameTime)
-		{
-			++Sprites[int(AnimStates::idleRight)].currentFrame %= Sprites[int(AnimStates::idleRight)].frames;
-			Sprites[int(AnimStates::idleRight)].accumulatedTime -= Sprites[int(AnimStates::idleRight)].frameTime;
-		}
-		break;
-	case AnimStates::idleUp:
-		Sprites[int(AnimStates::idleUp)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::idleUp)].accumulatedTime > Sprites[int(AnimStates::idleUp)].frameTime)
-		{
-			++Sprites[int(AnimStates::idleUp)].currentFrame %= Sprites[int(AnimStates::idleUp)].frames;
-			Sprites[int(AnimStates::idleUp)].accumulatedTime -= Sprites[int(AnimStates::idleUp)].frameTime;
-		}
-		break;
-	case AnimStates::idleLeft:
-		Sprites[int(AnimStates::idleLeft)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::idleLeft)].accumulatedTime > Sprites[int(AnimStates::idleLeft)].frameTime)
-		{
-			++Sprites[int(AnimStates::idleLeft)].currentFrame %= Sprites[int(AnimStates::idleLeft)].frames;
-			Sprites[int(AnimStates::idleLeft)].accumulatedTime -= Sprites[int(AnimStates::idleLeft)].frameTime;
-		}
-		break;
-	case AnimStates::idleDown:
-		Sprites[int(AnimStates::idleDown)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::idleDown)].accumulatedTime > Sprites[int(AnimStates::idleDown)].frameTime)
-		{
-			++Sprites[int(AnimStates::idleDown)].currentFrame %= Sprites[int(AnimStates::idleDown)].frames;
-			Sprites[int(AnimStates::idleDown)].accumulatedTime -= Sprites[int(AnimStates::idleDown)].frameTime;
-		}
-		break;
-	case AnimStates::runRight:
-		Sprites[int(AnimStates::runRight)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::runRight)].accumulatedTime > Sprites[int(AnimStates::runRight)].frameTime)
-		{
-			++Sprites[int(AnimStates::runRight)].currentFrame %= Sprites[int(AnimStates::runRight)].frames;
-			Sprites[int(AnimStates::runRight)].accumulatedTime -= Sprites[int(AnimStates::runRight)].frameTime;
-		}
-		break;
-	case AnimStates::runLeft:
-		Sprites[int(AnimStates::runLeft)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::runLeft)].accumulatedTime > Sprites[int(AnimStates::runLeft)].frameTime)
-		{
-			++Sprites[int(AnimStates::runLeft)].currentFrame %= Sprites[int(AnimStates::runLeft)].frames;
-			Sprites[int(AnimStates::runLeft)].accumulatedTime -= Sprites[int(AnimStates::runLeft)].frameTime;
-		}
-		break;
-	case AnimStates::runDown:
-		Sprites[int(AnimStates::runDown)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::runDown)].accumulatedTime > Sprites[int(AnimStates::runDown)].frameTime)
-		{
-			++Sprites[int(AnimStates::runDown)].currentFrame %= Sprites[int(AnimStates::runDown)].frames;
-			Sprites[int(AnimStates::runDown)].accumulatedTime -= Sprites[int(AnimStates::runDown)].frameTime;
-		}
-		break;
-	case AnimStates::runUp:
-		Sprites[int(AnimStates::runUp)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::runUp)].accumulatedTime > Sprites[int(AnimStates::runUp)].frameTime)
-		{
-			++Sprites[int(AnimStates::runUp)].currentFrame %= Sprites[int(AnimStates::runUp)].frames;
-			Sprites[int(AnimStates::runUp)].accumulatedTime -= Sprites[int(AnimStates::runUp)].frameTime;
-		}
-		break;
-	}
-}
-#pragma endregion spriteHandling
-
-#pragma region gameHandling
-void DrawStartScreen()
-{
-	Texture startingScreen{ FetchTexture("starting_screen") };
-	Rectf dstRect{};
-	dstRect.width = g_WindowWidth;
-	dstRect.height = g_WindowHeight;
-	dstRect.left = 0;
-	dstRect.bottom = 0;
-
-	DrawTexture(startingScreen, dstRect);
-}
-void DrawWonScreen()
-{
-	Texture WonScreen{ FetchTexture("won_screen") };
-	Rectf dstRect{};
-	dstRect.width = g_WindowWidth;
-	dstRect.height = g_WindowHeight;
-	dstRect.left = 0;
-	dstRect.bottom = 0;
-
-	DrawTexture(WonScreen, dstRect);
-}
-void ClickStart(const SDL_MouseButtonEvent& e)
-{
-	if (g_Game == GameStates::startScreen)
-	{
-		Point2f mousePos{ float(e.x), g_WindowHeight - float(e.y) };
-		Rectf startButton{ 516.f,63.f, 246.f,81.f };
-
-		if (IsPointInRect(startButton, mousePos))
-		{
-			g_Game = GameStates::playing;
-		}
-	}
-}
-void SetGameOverScreen(Player& player)
-{
-	if (player.health <= 0.f)
-	{
-		g_Game = GameStates::gameOverScreen;
-	}
-}
-#pragma endregion gameHandling
 
 #pragma endregion ownDefinitions
