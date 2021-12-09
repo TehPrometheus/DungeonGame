@@ -238,10 +238,11 @@ void UpdateGame(float elapsedSec)
 		UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
 		ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites, elapsedSec);
 		ProcessAnimState(g_Player, g_PlayerSprites);
+		ProcessWeaponCooldown(g_Player, elapsedSec);
 		UpdatePlayerAnimState(g_PlayerSprites, elapsedSec);
 		UpdateProjectiles(elapsedSec);
 		UpdateStatusEffects(elapsedSec);
-		if (CheckRoomCleared(g_CurrentRoom))
+		if (CheckRoomCleared(g_CurrentRoom) && g_CurrentRoom.id != RoomID::bossRoom)
 		{
 			SetRoomCleared(g_CurrentRoom);
 			OpenDoors(g_CellArr, g_GridSize);

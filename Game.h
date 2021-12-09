@@ -13,23 +13,22 @@ float g_WindowHeight{ 720 };
 
 #pragma region ownDeclarations
 // Declare your own global variables here
-float g_DebugTimer{0.f};
-
-const int g_NrRows				{ 9 };
+const int g_NrRows				{  9 };
 const int g_NrCols				{ 13 };
 const int g_GridSize			{ g_NrRows * g_NrCols };
-const int g_TexturesSize		{ 100 }; // Careful, we do not know yet how many textures we'll need. ADDED WALL
+const int g_TexturesSize		{ 100}; // Careful, we do not know yet how many textures we'll need. ADDED WALL
 const int g_EnemyArrSize		{ 12 };
 const int g_MaxEnemiesPerRoom   { 10 };
 const int g_MaxInteractablesRoom{ 10 };
 const int g_NrRoomsPerLevel		{ 15 }; // Careful with this aswell
 const int g_RoomArrSize			{ 10 }; 
-const int g_ItemInventorySize	{ 5 };
+const int g_ItemInventorySize	{  5 };
 const int g_ItemsInGame			{ 10 };
-const int g_WeaponInventorySize	{ 3 };
+const int g_WeaponInventorySize	{  3 };
 const int g_WeaponsInGame		{ 10 };
 const int g_InteractablesInGame	{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
+const int g_TotemSpritesSize	{  3 };
 const int g_MaxProjectiles      { 20 };
 
 // enums
@@ -219,6 +218,7 @@ struct Player
 	float coolDownTimer;
 
 	StatusEffect effects[g_ItemInventorySize];
+	bool isPlayerHit{ false };
 };
 struct Enemy
 {
@@ -296,7 +296,7 @@ Texture g_Numbers[g_GridSize]{};
 NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
 Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
 Projectile g_Projectiles[g_MaxProjectiles]{};
-
+Sprite g_TotemSprite{};
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -313,6 +313,7 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_Black{ 0,0,0,1 },
 				g_White{ 1,1,1,1 },
 				g_WhiteTransparent{1.f, 1.f, 1.f, 0.1f};
+
 
 // Declare your own functions here
 
@@ -463,6 +464,9 @@ void BossAttackPlayer(float elapsedSec);
 void BossLookAtPlayer();
 void PrepareToCharge();
 
+void InitTotems();
+void DrawTotems(Sprite totemsprite);
+void UpdateTotems(float elapsedSec);
 
 
 // Input Handling
@@ -484,7 +488,6 @@ void OpenDoors(Cell cellArr[], int size);
 bool CheckRoomCleared(Room& currentRoom);
 void SetRoomCleared(Room& currentRoom);
 
-// Level Handling
 
 
 
