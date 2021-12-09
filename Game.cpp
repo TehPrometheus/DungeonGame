@@ -1252,17 +1252,27 @@ void UseItem(Player& player, int itemslot)
 	}
 }
 
-void UseWeapon(const Player& player)
+void UseWeapon(Player& player)
 {
-	g_Player.weaponAnimation.isPlaying = true;
-	g_Player.weaponAnimation.elapsedTime = 0;
-	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
-	{
-		UseSword(player);
-	}
-	else if (player.weaponInventory[player.selectedWeapon].type == WeaponType::bow)
-	{
-		UseBow(player);
+	if (!player.isWeaponOnCooldown && !player.weaponAnimation.isPlaying) {
+		if (player.weaponInventory[player.selectedWeapon].type == WeaponType::sword)
+		{
+			g_Player.weaponAnimation.isPlaying = true;
+			g_Player.weaponAnimation.elapsedTime = 0;
+			UseSword(player);
+		}
+		else if (player.weaponInventory[player.selectedWeapon].type == WeaponType::bow)
+		{
+			g_Player.weaponAnimation.isPlaying = true;
+			g_Player.weaponAnimation.elapsedTime = 0;
+			UseBow(player);
+		}
+		else if (player.weaponInventory[player.selectedWeapon].type == WeaponType::spear)
+		{
+			g_Player.weaponAnimation.isPlaying = true;
+			g_Player.weaponAnimation.elapsedTime = 0;
+			UseSpear(player);
+		}
 	}
 }
 void UseSword(const Player& player)
@@ -1322,6 +1332,30 @@ void UseBow(const Player& player)
 		CreateProjectile(spawnRect, "arrow_down", angle, projectileSpeed, bowDamage);
 	}
 }
+void UseSpear(const Player& player) {
+	int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
+	const int tilesAmount{ 2 };
+	if (player.facing == Direction::up) {
+		int tilesToScan[tilesAmount]{ playerIndex - g_NrCols, playerIndex - 2 * g_NrCols };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+	else if (player.facing == Direction::down)
+	{
+		int tilesToScan[tilesAmount]{ playerIndex + g_NrCols, playerIndex + 2 * g_NrCols };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+	else if (player.facing == Direction::right)
+	{
+		int tilesToScan[tilesAmount]{ playerIndex + 1, playerIndex + 2};
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+	else if (player.facing == Direction::left)
+	{
+		int tilesToScan[tilesAmount]{ playerIndex - 1, playerIndex - 2 };
+		AttackOnTiles(player, tilesToScan, tilesAmount);
+	}
+}
+
 void CycleWeapons(Player& player)
 {
 	if (   player.selectedWeapon < g_WeaponInventorySize - 1 
@@ -1332,6 +1366,17 @@ void CycleWeapons(Player& player)
 	else
 	{
 		player.selectedWeapon = 0;
+	}
+}
+void ProcessWeaponCooldown(Player& player, float elapsedSec)
+{
+	if (player.coolDownTimer < 0)
+	{
+		player.isWeaponOnCooldown = false;
+	}
+	else
+	{
+		player.coolDownTimer -= elapsedSec;
 	}
 }
 
@@ -1346,6 +1391,10 @@ void DrawReach(const Player& player)
 	else if (playerWeapon == WeaponType::bow)
 	{
 		DrawBowReach(player);
+	}
+	else if (playerWeapon == WeaponType::spear)
+	{
+		DrawSpearReach(player);
 	}
 }
 void DrawSwordReach(const Player& player)
@@ -1392,6 +1441,59 @@ void DrawSwordReach(const Player& player)
 			for (int i{-1}; i < 2; ++i)
 			{
 				const int currentTile{ playerIndex - 1 + i * g_NrCols };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
+		}
+	}
+}
+void DrawSpearReach(const Player& player)
+{
+	if (player.weaponInventory[player.selectedWeapon].type == WeaponType::spear) {
+		int playerIndex{ GetPlayerGridIndex(player, g_CellArr, g_GridSize) };
+		if (player.facing == Direction::up) {
+			for (int i{1}; i < 3; ++i)
+			{
+				const int currentTile{ playerIndex - g_NrCols * i };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
+		}
+		else if (player.facing == Direction::down && playerIndex + g_NrCols < g_GridSize)
+		{
+			for (int i{ 1 }; i < 3; ++i)
+			{
+				const int currentTile{ playerIndex + g_NrCols * i };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
+		}
+		else if (player.facing == Direction::right)
+		{
+			for (int i{ 1 }; i < 3; ++i)
+			{
+				const int currentTile{ playerIndex + i };
+				if (!g_CellArr[currentTile].isObstacle
+					&& currentTile > 0 && currentTile < g_GridSize)
+				{
+					FillRect(g_CellArr[currentTile].dstRect);
+				}
+			}
+		}
+		else if (player.facing == Direction::left)
+		{
+			for (int i{ 1 }; i < 3; ++i)
+			{
+				const int currentTile{ playerIndex - i };
 				if (!g_CellArr[currentTile].isObstacle
 					&& currentTile > 0 && currentTile < g_GridSize)
 				{
@@ -1558,7 +1660,8 @@ void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.5f);
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
-	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe_up", WeaponType::sword, 3.5f);
+	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe_up", WeaponType::sword, 4.0f);
+	g_Weapons[3] = InitializeWeapon("spear", "spear_up", WeaponType::spear, 3.f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1582,6 +1685,19 @@ Weapon FetchWeapon(const std::string& name)
 	return no_weapon;
 }
 
+void SetWeaponCooldown(const Weapon& weapon)
+{
+	if (weapon.name == "spear")
+	{
+		g_Player.isWeaponOnCooldown = true;
+		g_Player.coolDownTimer = 0.2f;
+	}
+	if (weapon.name == "basic_axe")
+	{
+		g_Player.isWeaponOnCooldown = true;
+		g_Player.coolDownTimer = 0.1f;
+	}
+}
 void UpdateWeaponAnimation(float elapsedSec)
 {
 	WeaponAnimation& animation{ g_Player.weaponAnimation };
@@ -1608,12 +1724,14 @@ void UpdateWeaponAnimation(float elapsedSec)
 			break;
 		}
 	}
-	else if ((animation.isPlaying && animation.elapsedTime > animation.playTime) || weapon.type == WeaponType::bow)
+	else
+	if ((animation.isPlaying && animation.elapsedTime > animation.playTime) || weapon.type == WeaponType::bow)
 	{
 		animation.isPlaying = false;
+		SetWeaponCooldown(weapon);
 		animation.elapsedTime = 0;
 	}
-	else if (animation.isPlaying && weapon.type == WeaponType::sword)
+	else if (animation.isPlaying && weapon.type == WeaponType::sword && !g_Player.isWeaponOnCooldown)
 	{
 		const float cellSize{ 64.f };
 		const float animationDist{ 2 * cellSize };
@@ -1638,6 +1756,53 @@ void UpdateWeaponAnimation(float elapsedSec)
 			break;
 		}
 		animation.elapsedTime += elapsedSec;
+	}
+	else if (animation.isPlaying && weapon.type == WeaponType::spear && !g_Player.isWeaponOnCooldown)
+	{
+		const float cellSize{ 64.f };
+		const float animationDist{ 1 * cellSize };
+		animation.playTime = 0.15f;
+		switch (g_Player.facing)
+		{
+		case Direction::up:
+			animation.position.left = g_Player.animationPos.left;
+			animation.position.bottom = g_Player.animationPos.bottom + cellSize/2 + animation.elapsedTime * animationDist / animation.playTime;
+			break;
+		case Direction::down:
+			animation.position.left = g_Player.animationPos.left;
+			animation.position.bottom = g_Player.animationPos.bottom - cellSize/2 - animation.elapsedTime * animationDist / animation.playTime;
+			break;
+		case Direction::right:
+			animation.position.left = g_Player.animationPos.left + cellSize/2 + animation.elapsedTime * animationDist / animation.playTime;;
+			animation.position.bottom = g_Player.animationPos.bottom;
+			break;
+		case Direction::left:
+			animation.position.left = g_Player.animationPos.left - cellSize/2 - animation.elapsedTime * animationDist / animation.playTime;;
+			animation.position.bottom = g_Player.animationPos.bottom;
+			break;
+		}
+		animation.elapsedTime += elapsedSec;
+	}
+	else {
+		switch (g_Player.facing)
+		{
+		case Direction::up:
+			animation.position.bottom = g_Player.animationPos.bottom;
+			animation.position.left = g_Player.animationPos.left + weapon.texture.width / 3;
+			break;
+		case Direction::down:
+			animation.position.bottom = g_Player.animationPos.bottom - weapon.texture.width / 3;
+			animation.position.left = g_Player.animationPos.left - weapon.texture.width / 3;
+			break;
+		case Direction::right:
+			animation.position.bottom = g_Player.animationPos.bottom - weapon.texture.width / 3;
+			animation.position.left = g_Player.animationPos.left;
+			break;
+		case Direction::left:
+			animation.position.bottom = g_Player.animationPos.bottom - weapon.texture.width / 3;
+			animation.position.left = g_Player.animationPos.left - weapon.texture.width / 2;
+			break;
+		}
 	}
 }
 void DrawWeaponAnimation()
@@ -1843,6 +2008,11 @@ void RollForDrop(Enemy& enemy)
 	{
 		itemToSpawn = "shield_potion";
 		type = InteractableType::itemDrop;
+	}
+	else if (dieRoll < 30)
+	{
+		itemToSpawn = "spear";
+		type = InteractableType::weaponDrop;
 	}
 
 	if (itemToSpawn != "")
@@ -2342,7 +2512,7 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 	{
 		if (enemyArr[index].health <= 0.f && enemyArr[index].maxHealth != 0)
 		{ 
-			RollForDrop(enemyArr[index]);
+			if (g_CurrentRoom.id != RoomID::bossRoom) RollForDrop(enemyArr[index]);
 			DestroyEnemy(enemyArr[index]);
 		} 
 		else if (enemyArr[index].type == EnemyType::basic)
