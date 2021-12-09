@@ -1403,8 +1403,8 @@ void InitWeapons()
 {
 	g_Weapons[0] = InitializeWeapon("basic_sword", "basic_sword_up", WeaponType::sword, 2.5f);
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
-	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe_up", WeaponType::sword, 3.5f);
-	g_Weapons[3] = InitializeWeapon("spear", "spear_up", WeaponType::spear, 2.f);
+	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe_up", WeaponType::sword, 4.0f);
+	g_Weapons[3] = InitializeWeapon("spear", "spear_up", WeaponType::spear, 3.f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1445,7 +1445,7 @@ void UpdateWeaponAnimation(float elapsedSec)
 {
 	WeaponAnimation& animation{ g_Player.weaponAnimation };
 	const Weapon& weapon{ g_Player.weaponInventory[g_Player.selectedWeapon] };
-	/*if (!animation.isPlaying || !animation.enabled)
+	if (!animation.isPlaying || !animation.enabled)
 	{
 		switch (g_Player.facing)
 		{
@@ -1467,7 +1467,7 @@ void UpdateWeaponAnimation(float elapsedSec)
 			break;
 		}
 	}
-	else*/ 
+	else
 	if ((animation.isPlaying && animation.elapsedTime > animation.playTime) || weapon.type == WeaponType::bow)
 	{
 		animation.isPlaying = false;
@@ -2255,7 +2255,7 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 	{
 		if (enemyArr[index].health <= 0.f && enemyArr[index].maxHealth != 0)
 		{ 
-			RollForDrop(enemyArr[index]);
+			if (g_CurrentRoom.id != RoomID::bossRoom) RollForDrop(enemyArr[index]);
 			DestroyEnemy(enemyArr[index]);
 		} 
 		else if (enemyArr[index].type == EnemyType::basic)
