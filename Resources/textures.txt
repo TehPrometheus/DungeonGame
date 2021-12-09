@@ -24,6 +24,8 @@
 {wall_right.png,wall_right,true}
 {wall_sharp_corner_left.png,wall_sharp_corner_left,true}
 {wall_sharp_corner_right.png,wall_sharp_corner_right,true}
+{lava_totem_anim.png,lava_totem_anim,true}
+{button.png,button}
 
 {basic_sword_up.png,basic_sword_up}
 {basic_sword_down.png,basic_sword_down}

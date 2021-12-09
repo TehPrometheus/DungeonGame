@@ -148,6 +148,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 void InitGame()
 {
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
+	InitTotems();
 	InitItems();
 	InitWeapons();
 	InitializeRooms(g_Level);
@@ -166,6 +167,7 @@ void DrawGame()
 	}
 	case GameStates::playing:
 	{
+		DrawTotems(g_TotemSprite);
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
@@ -182,6 +184,7 @@ void DrawGame()
 	}
 	case GameStates::gameOver:
 	{
+		DrawTotems(g_TotemSprite);
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
@@ -199,6 +202,7 @@ void DrawGame()
 	}
 	case GameStates::gameWon:
 	{
+		DrawTotems(g_TotemSprite);
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
@@ -226,6 +230,7 @@ void UpdateGame(float elapsedSec)
 
 		break;
 	case GameStates::playing:
+		UpdateTotems(elapsedSec);
 		UpdateBossAnimState(elapsedSec);
 		UpdateBossAIState(elapsedSec);
 		UpdateAnimationPos(elapsedSec, g_Player);
@@ -876,12 +881,16 @@ void InitPlayerAnimState(Sprite Sprites[])
 	Sprites[int(AnimStates::hit)].frames = 1;
 	Sprites[int(AnimStates::hit)].currentFrame = 0;
 	Sprites[int(AnimStates::hit)].accumulatedTime = 0.0f;
-	Sprites[int(AnimStates::hit)].frameTime = 1 / 1.0f;
+	Sprites[int(AnimStates::hit)].frameTime = 1 / 15.0f;
 
 
 }
 void UpdatePlayerAnimState(Sprite Sprites[], float elapsedSec)
 {
+	if (g_Player.isPlayerHit == true)
+	{
+		g_Player.animState = AnimStates::hit;
+	}
 	switch (g_Player.animState)
 	{
 	case AnimStates::idleRight:
@@ -950,10 +959,14 @@ void UpdatePlayerAnimState(Sprite Sprites[], float elapsedSec)
 		break;
 	case AnimStates::hit:
 		Sprites[int(AnimStates::hit)].accumulatedTime += elapsedSec;
-		if (Sprites[int(AnimStates::hit)].accumulatedTime > Sprites[int(AnimStates::hit)].frameTime)
+		if (Sprites[int(AnimStates::hit)].accumulatedTime < 0.2f)
 		{
-			++Sprites[int(AnimStates::hit)].currentFrame %= Sprites[int(AnimStates::hit)].frames;
-			Sprites[int(AnimStates::hit)].accumulatedTime -= Sprites[int(AnimStates::hit)].frameTime;
+			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
+		}
+		else
+		{
+			Sprites[int(AnimStates::hit)].accumulatedTime = 0;
+			g_Player.isPlayerHit = false;
 		}
 		break;
 
@@ -1622,6 +1635,7 @@ void UpdateProjectiles(float elapsedSec)
 		{
 			g_Player.health -= g_Projectiles[i].damage;
 			DestroyProjectile(g_Projectiles[i]);
+			g_Player.isPlayerHit = true; // new line
 		}
 		for (int j{}; j < g_GridSize; ++j)
 		{
@@ -2405,15 +2419,15 @@ void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSiz
 		else if (isNextToPlayerX 
 			&&   g_Player.health > 0.f)
 		{
-			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
 			g_Player.animState = AnimStates::hit;
+			g_Player.isPlayerHit = true; // new line
 			g_Player.health -= enemy.damageOutput;
 			enemy.animationPos.left -= (enemy.animationPos.left - g_Player.dstRect.left) / 2;
 		}
 		else if (isNextToPlayerY && g_Player.health > 0.f)
 		{
-			g_Player.sprite.texture = FetchTexture("knight_hit_anim");
 			g_Player.animState = AnimStates::hit;
+			g_Player.isPlayerHit = true; // new line
 			g_Player.health -= enemy.damageOutput;
 			enemy.animationPos.bottom -= (enemy.animationPos.bottom - g_Player.dstRect.bottom) / 2;
 		}
@@ -2611,7 +2625,7 @@ void DrawBoss()
 }
 void ChargeAtPlayer(float elapsedSec)
 {
-	float minDistance{ 3.f };
+	float minDistance{ 5.f };
 	if ( BossDistanceToChargePoint() > minDistance)
 	{
 		g_Boss.dstRect.left -= (g_Boss.speed * cosf(g_Boss.bossPlayerAngle)) * elapsedSec;
@@ -2682,7 +2696,7 @@ void UpdateBossAIState(float elapsedSec)
 		{
 			const int nrOfMinions{ g_MaxEnemiesPerRoom };
 			EnemyShorthand minions[g_MaxEnemiesPerRoom]
-				{ {"rusher",18 } , {"rusher",19 } , {"rusher",20 } , {"rusher",21 } , {"rusher",22 } };
+				{ {"rusher",15 } , {"rusher",17 } , {"rusher",19 } , {"rusher",21 } , {"rusher",23 } };
 			SpawnEnemies(minions);
 			g_Boss.AIState = BossAIStates::idle;
 			break;
@@ -2793,6 +2807,7 @@ void BossAttackPlayer(float elapsedSec)
 	if (IsOverlapping(g_Boss.dstRect, g_Player.dstRect) && g_Boss.bossAttackPlayerTimer > hitRate)
 	{
 		g_Player.health -= g_Boss.damageOutput;
+		g_Player.isPlayerHit = true; // new line
 		g_Boss.bossAttackPlayerTimer = 0;
 	}
 }
@@ -2813,6 +2828,40 @@ void BossLookAtPlayer()
 	else if (g_Boss.dstRect.left > g_Player.dstRect.left && g_Boss.AIState == BossAIStates::charge)
 	{
 		g_Boss.animState = AnimStates::runLeft;
+	}
+
+
+}
+
+void InitTotems()
+{
+	g_TotemSprite.texture = FetchTexture("lava_totem_anim");
+	g_TotemSprite.cols = 3;
+	g_TotemSprite.frames = 3;
+	g_TotemSprite.currentFrame = 0;
+	g_TotemSprite.accumulatedTime = 0.0f;
+	g_TotemSprite.frameTime = 1 / 5.0f;
+}
+void DrawTotems(Sprite totemsprite)
+{
+	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	Rectf srcRect{};
+	srcRect.width = totemsprite.texture.width / totemsprite.cols;
+	srcRect.height = totemsprite.texture.height;
+	srcRect.left = totemsprite.currentFrame * srcRect.width;
+	srcRect.bottom = srcRect.height;
+
+	for (int i = 2; i <= 10; i+=2) DrawTexture(totemsprite.texture, g_CellArr[i].dstRect, srcRect);
+}
+void UpdateTotems(float elapsedSec)
+{
+	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+
+	g_TotemSprite.accumulatedTime += elapsedSec;
+	if (g_TotemSprite.accumulatedTime > g_TotemSprite.frameTime)
+	{
+		++g_TotemSprite.currentFrame %= g_TotemSprite.frames;
+		g_TotemSprite.accumulatedTime -= g_TotemSprite.frameTime;
 	}
 
 
@@ -3119,12 +3168,4 @@ void SetRoomCleared(Room& currentRoom)
 	}
 }
 #pragma endregion roomHandling 
-
-#pragma region levelHandling
-// Level Handling
-
-
-#pragma endregion levelHandling
-
-
 #pragma endregion ownDefinitions
