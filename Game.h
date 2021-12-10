@@ -30,6 +30,7 @@ const int g_InteractablesInGame	{ g_WeaponsInGame + g_ItemsInGame };
 const int g_PlayerSpritesSize	{ 20 };
 const int g_TotemSpritesSize	{  3 };
 const int g_MaxProjectiles      { 20 };
+const int g_VoiceLinesSize		{ 10 };
 
 // enums
 enum class GameStates
@@ -249,8 +250,9 @@ struct Boss // WORK IN PROGRESS
 	float damageOutput;
 	float bossAIStateTimer;
 	float bossAttackPlayerTimer;
+	float bossVoiceLineTimer;
 	float bossPlayerAngle{};
-	int viewRange;
+	bool isTalking;
 };
 struct EnemyShorthand
 {
@@ -297,6 +299,7 @@ NamedTexture g_NamedTexturesArr[g_TexturesSize]{};
 Sprite g_PlayerSprites[g_PlayerSpritesSize]{};
 Projectile g_Projectiles[g_MaxProjectiles]{};
 Sprite g_TotemSprite{};
+Texture g_VoiceLinesArr[g_VoiceLinesSize]{};
 
 const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_GreenTransparent{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 100 / 255.f },
@@ -313,7 +316,6 @@ const Color4f   g_Green{ 0 / 255.f, 236 / 255.f, 0 / 255.f, 255 / 255.f },
 				g_Black{ 0,0,0,1 },
 				g_White{ 1,1,1,1 },
 				g_WhiteTransparent{1.f, 1.f, 1.f, 0.1f};
-
 
 // Declare your own functions here
 
@@ -467,6 +469,10 @@ void PrepareToCharge();
 void InitTotems();
 void DrawTotems(Sprite totemsprite);
 void UpdateTotems(float elapsedSec);
+std::string GetRandomMinion();
+void InitVoiceLines(Texture voiceLinesArr[]);
+void DrawVoiceLine(const Boss& boss, const Texture voiceLinesArr[]);
+void UpdateVoiceLine(Boss& boss, float elapsedSec);
 
 
 // Input Handling
