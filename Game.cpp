@@ -153,6 +153,7 @@ void InitGame()
 	InitWeapons();
 	InitializeRooms(g_Level);
 	InitPlayer(g_Player, g_CellArr, g_PlayerSprites);
+	InitVoiceLines(g_VoiceLinesArr);
 }
 void DrawGame()
 {
@@ -233,6 +234,7 @@ void UpdateGame(float elapsedSec)
 		UpdateTotems(elapsedSec);
 		UpdateBossAnimState(elapsedSec);
 		UpdateBossAIState(elapsedSec);
+		UpdateVoiceLine(g_Boss, elapsedSec);
 		UpdateAnimationPos(elapsedSec, g_Player);
 		UpdateWeaponAnimation(elapsedSec);
 		UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
@@ -1055,6 +1057,7 @@ void DrawHealthBar(Rectf animationPosRect, float health, float maxHealth)
 	else							   SetColor(g_DarkRed);
 	FillRect(healthBar);
 }
+
 void DrawPlayerHealth(const Player& player)
 {
 	if (player.health != player.maxHealth) 
@@ -2581,11 +2584,12 @@ void InitBoss()
 	g_Boss.damageOutput = 0.8f;
 	g_Boss.bossAIStateTimer = 0.f;
 	g_Boss.bossAttackPlayerTimer = 0.f;
+	g_Boss.bossVoiceLineTimer = 0.f;
 	g_Boss.bossPlayerAngle = 0.f;
-	g_Boss.viewRange = 10;
 	g_Boss.chargeEndPoint.x = 0;
 	g_Boss.chargeEndPoint.y = 0;
 	g_Boss.speed = 500.f;
+	g_Boss.isTalking = false;
 
 	g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
 	g_Boss.sprite.cols = 4;
@@ -2620,11 +2624,13 @@ void DrawBossHealth()
 void DrawBoss()
 {
 	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	DrawVoiceLine(g_Boss, g_VoiceLinesArr);
 	DrawBossHealth();
 	DrawTexture(g_Boss.sprite.texture, g_Boss.dstRect, g_Boss.srcRect);
 }
 void ChargeAtPlayer(float elapsedSec)
 {
+
 	float minDistance{ 5.f };
 	if ( BossDistanceToChargePoint() > minDistance)
 	{
@@ -2648,17 +2654,18 @@ void UpdateBossAIState(float elapsedSec)
 	int randInt{1 + rand() % 100 };
 
 	int regenChance{ 10 };
-	int spawnMinionsChance{ 15 };
-	int chargeChance{ 65 };
+	int spawnMinionsChance{ 20 };
+	int chargeChance{ 70 };
 	switch (g_Boss.AIState)
 	{
 		case BossAIStates::idle:
 		{
 			if (g_Boss.bossAIStateTimer > thinkingTime)
 			{
+				g_Boss.isTalking = true;
 				if (randInt > 0 && randInt <= regenChance)
 				{
-					if (g_Boss.health / g_Boss.maxHealth <= 0.8f)
+					if (g_Boss.health / g_Boss.maxHealth <= 0.3f)
 					{
 						g_Boss.AIState = BossAIStates::regenerate;
 						g_Boss.bossAIStateTimer = 0;
@@ -2667,9 +2674,11 @@ void UpdateBossAIState(float elapsedSec)
 				}
 				else if (randInt > regenChance && randInt <= spawnMinionsChance)
 				{
+					if (g_Boss.health / g_Boss.maxHealth <= 0.5f)
+					{
 					g_Boss.AIState = BossAIStates::spawnMinions;
 					g_Boss.bossAIStateTimer = 0;
-
+					}
 					break;
 				}
 				else if (randInt > spawnMinionsChance && randInt <= chargeChance)
@@ -2694,17 +2703,29 @@ void UpdateBossAIState(float elapsedSec)
 		}
 		case BossAIStates::spawnMinions:
 		{
-			const int nrOfMinions{ g_MaxEnemiesPerRoom };
-			EnemyShorthand minions[g_MaxEnemiesPerRoom]
-				{ {"rusher",15 } , {"rusher",17 } , {"rusher",19 } , {"rusher",21 } , {"rusher",23 } };
-			SpawnEnemies(minions);
-			g_Boss.AIState = BossAIStates::idle;
+			if (!g_Boss.isTalking)
+			{
+				int spawnIdx{ 15 };
+				const int nrOfMinions{ g_MaxEnemiesPerRoom };
+				EnemyShorthand minions[g_MaxEnemiesPerRoom]
+				{ { GetRandomMinion() , spawnIdx		 } ,
+				 { GetRandomMinion() , spawnIdx += 2 } ,
+				 { GetRandomMinion() , spawnIdx += 2 } ,
+				 { GetRandomMinion() , spawnIdx += 2 } ,
+				 { GetRandomMinion() , spawnIdx += 2 } };
+
+				SpawnEnemies(minions);
+				g_Boss.AIState = BossAIStates::idle;
+			}
 			break;
 		}
 		case BossAIStates::regenerate:
 		{
-			g_Boss.health += 0.2f * g_Boss.maxHealth;	
-			g_Boss.AIState = BossAIStates::idle;
+			if (!g_Boss.isTalking)
+			{
+				g_Boss.health += 0.2f * g_Boss.maxHealth;
+				g_Boss.AIState = BossAIStates::idle;
+			}
 			break;
 		}
 		case BossAIStates::death:
@@ -2867,6 +2888,50 @@ void UpdateTotems(float elapsedSec)
 
 }
 
+std::string GetRandomMinion()
+{
+	const int nrOfMinions{ 5 };
+	int randIdx{ rand() % nrOfMinions };
+	std::string minionsArr[nrOfMinions]{"", "rusher", "zombie", "bat", "archer"};
+
+	return minionsArr[randIdx];
+}
+
+void InitVoiceLines(Texture voiceLinesArr[])
+{
+	int idx{};
+	TextureFromString("Hmmm...", "Resources/Font.ttf", 20, g_White, voiceLinesArr[idx]);
+	TextureFromString("Minions! Come to my aid!", "Resources/Font.ttf", 20, g_White, voiceLinesArr[++idx]);
+	TextureFromString("'Tis but a scratch!", "Resources/Font.ttf", 20, g_White, voiceLinesArr[++idx]);
+	TextureFromString("Dodge this!", "Resources/Font.ttf", 20, g_White, voiceLinesArr[++idx]);
+}
+void DrawVoiceLine(const Boss& boss,const Texture voiceLinesArr[])
+{
+	Point2f textBox{};
+	const float shift{ 10.f };
+	textBox.x = boss.dstRect.left + shift;
+	textBox.y = boss.dstRect.bottom + boss.dstRect.height + shift;
+	if (g_Boss.isTalking)
+	{
+	if (boss.AIState == BossAIStates::idle) DrawTexture(voiceLinesArr[0], textBox);
+	if (boss.AIState == BossAIStates::spawnMinions) DrawTexture(voiceLinesArr[1], textBox);
+	if (boss.AIState == BossAIStates::regenerate) DrawTexture(voiceLinesArr[2], textBox);
+	if (boss.AIState == BossAIStates::charge) DrawTexture(voiceLinesArr[3], textBox);
+	}
+}
+
+void UpdateVoiceLine(Boss& boss, float elapsedSec)
+{
+	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	const float voiceLineDuration{ 1.f };
+
+	if (g_Boss.isTalking) boss.bossVoiceLineTimer += elapsedSec;
+	if (boss.bossVoiceLineTimer > voiceLineDuration)
+	{
+		g_Boss.isTalking = false;
+		boss.bossVoiceLineTimer = 0;
+	}
+}
 #pragma endregion enemyHandling
 
 #pragma region roomHandling
@@ -3061,8 +3126,8 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
-	g_CurrentRoom = level[0];
-	LoadRoom(level[0]);
+	g_CurrentRoom = level[14];
+	LoadRoom(level[14]);
 }
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
 {
@@ -3125,7 +3190,6 @@ void LoadRoom(const Room& roomToLoad)
 	{
 		InitBoss();
 	}
-
 }
 void OpenDoors(Cell cellArr[], int size)
 {
