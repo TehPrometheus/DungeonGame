@@ -2,7 +2,7 @@
 using namespace utils;
 #pragma region gameInformation
 // Set your name and group in the title here
-std::string g_WindowTitle{ "DungeonGame - Aerts,Tanguy / Hertoghe, Rutger - 1DAE10/11" };
+std::string g_WindowTitle{ "Cave Knight - Aerts,Tanguy / Hertoghe, Rutger - 1DAE10/11" };
 
 // Change the window dimensions here
 float g_WindowWidth{ 1280 };
