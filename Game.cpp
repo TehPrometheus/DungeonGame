@@ -5,7 +5,6 @@
 #include <fstream>
 #include "Game.h"
 
-//Basic game functions
 #pragma region gameFunctions											
 void Start()
 {
@@ -28,7 +27,6 @@ void End()
 }
 #pragma endregion gameFunctions
 
-//Keyboard and mouse input handling
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
@@ -143,7 +141,6 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 #pragma endregion inputHandling
 
 #pragma region ownDefinitions
-// Define your own functions here
 #pragma region gameHandling
 void InitGame()
 {
@@ -605,7 +602,14 @@ void DeleteTextures()
 	for (int i = 0; i < g_PlayerSpritesSize; i++)
 	{
 		DeleteTexture(g_PlayerSprites[i].texture);
+	}
 
+	// Delete Boss related textures
+	DeleteTexture(g_Boss.sprite.texture);
+	DeleteTexture(g_TotemSprite.texture);
+	for (int i = 0; i < g_VoiceLinesSize; i++)
+	{
+		DeleteTexture(g_VoiceLinesArr[i]);
 	}
 
 }
@@ -1057,7 +1061,6 @@ void DrawHealthBar(Rectf animationPosRect, float health, float maxHealth)
 	else							   SetColor(g_DarkRed);
 	FillRect(healthBar);
 }
-
 void DrawPlayerHealth(const Player& player)
 {
 	if (player.health != player.maxHealth) 
@@ -1572,7 +1575,6 @@ void DrawBowReach(const Player& player)
 #pragma endregion playerInputHandling
 
 #pragma region projectileHandling
-// Projectile Handling
 void CreateProjectile(Rectf location, std::string type, float direction, float speed, float damage)
 {
 	bool foundEmpty{ false };
@@ -2544,8 +2546,9 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 		UpdateAnimationPos(elapsedSec, enemyArr[index]);
 	}
 }
+#pragma endregion enemyHandling
 
-// Boss Handling
+#pragma region bossHandling
 bool IsBossDead()
 {
 	if (g_Boss.health <= 0)
@@ -2919,7 +2922,6 @@ void DrawVoiceLine(const Boss& boss,const Texture voiceLinesArr[])
 	if (boss.AIState == BossAIStates::charge) DrawTexture(voiceLinesArr[3], textBox);
 	}
 }
-
 void UpdateVoiceLine(Boss& boss, float elapsedSec)
 {
 	if (g_CurrentRoom.id != RoomID::bossRoom) return;
@@ -2932,7 +2934,7 @@ void UpdateVoiceLine(Boss& boss, float elapsedSec)
 		boss.bossVoiceLineTimer = 0;
 	}
 }
-#pragma endregion enemyHandling
+#pragma endregion bossHandling
 
 #pragma region roomHandling
 // Room save file handling
@@ -3126,8 +3128,8 @@ void InitializeRooms(Room level[])
 	bossRoom.layoutToLoad = "boss_room.room";
 	bossRoom.rightDoorDestination = RoomID::horizontalHallway4;
 
-	g_CurrentRoom = level[14];
-	LoadRoom(level[14]);
+	g_CurrentRoom = level[0];
+	LoadRoom(level[0]);
 }
 void GoToLinkedRoom(const Room& roomOfDeparture, int playerIndex) 
 {
