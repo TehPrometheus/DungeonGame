@@ -154,6 +154,9 @@ void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 		ClickStart(e);
 		UseWeapon(g_Player);
 		break;
+	case (SDL_BUTTON_RIGHT):
+		UseItem(g_Player, g_Player.selectedItem);
+		break;
 	}
 }
 
