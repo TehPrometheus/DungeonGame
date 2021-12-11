@@ -995,7 +995,10 @@ void DrawWeaponInventory(const Player& player)
 		location.height = slotSize;
 		SetColor(g_Grey);
 		DrawRect(location);
-		DrawTexture(player.weaponInventory[index].texture, location);
+		if (player.weaponInventory[index].texture.id != FetchTexture("").id)
+		{
+			DrawTexture(player.weaponInventory[index].texture, location);
+		}
 		if (player.weaponInventory[index].name == "")
 		{
 			SetColor(g_Grey);
@@ -1011,22 +1014,31 @@ void DrawWeaponInventory(const Player& player)
 void DrawItemInventory(const Player& player)
 {
 	const float slotSize{ 64.f };
-	Point2f origin{ g_WindowWidth - 2 * slotSize, g_WindowHeight - 6 * slotSize };
+	const float border{ 2.0f };
+	Texture itemInv{ FetchTexture("item_inventory") };
+	const float heightScale{ (slotSize + 2 * border) / itemInv.height };
+	const float widthScale{ (slotSize * 5 + border * 4) / itemInv.width };
+	Rectf origin{ 0, 0, itemInv.width * widthScale, itemInv.height * heightScale};
+	DrawTexture(itemInv, origin);
 	for (int index{}; index < g_ItemInventorySize; ++index)
 	{
-		const float border{ 2.0f };
 		Rectf location{};
-		location.left = origin.x + slotSize + border;
-		location.bottom = origin.y + (index + 1) * (slotSize + border);
+		location.left = origin.left + (index) * (slotSize + border);
+		location.bottom = origin.bottom + border; 
 		location.width = slotSize;
 		location.height = slotSize;
 		SetColor(g_Grey);
 		DrawRect(location);
-		DrawTexture(player.itemInventory[index].texture, location);
+		if (player.itemInventory[index].texture.id != FetchTexture("").id)
+		{
+			DrawTexture(player.itemInventory[index].texture, location);
+		}
 
 		const float numberSize{ 16.f };
-		Rectf numberLocation{ location.left + location.width - numberSize, location.bottom, numberSize, numberSize };
-		DrawTexture(g_Numbers[player.itemInventory[index].count], numberLocation);
+		Rectf amountLocation{ location.left + location.width - numberSize, location.bottom, numberSize, numberSize };
+		DrawTexture(g_Numbers[player.itemInventory[index].count], amountLocation);
+		Rectf keyLocation(location.left + (slotSize - numberSize)/2, location.bottom + location.height, numberSize, numberSize);
+		DrawTexture(g_Numbers[index + 1], keyLocation);
 		if (player.itemInventory[index].name == "")
 		{
 			SetColor(g_Grey);
