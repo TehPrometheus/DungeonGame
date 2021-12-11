@@ -29,7 +29,6 @@ const int g_GridSize						{ g_NrRows * g_NrCols };
 const int g_RoomArrSize								{ 10 }; 
 const int g_ItemsInGame								{ 10 };
 const int g_TexturesSize							{ 100};
-const int g_EnemyArrSize							{ 12 };
 const int g_WeaponsInGame							{ 10 };
 const int g_MaxProjectiles							{ 20 };
 const int g_VoiceLinesSize							{ 10 };
@@ -294,22 +293,36 @@ struct Room
 #pragma endregion Struct Declarations
 
 #pragma region Other Declarations
-Cell			g_CellArr[g_GridSize]							{};
-Room			g_Level[15]										{};
-Room			g_CurrentRoom									{};
-Item			g_Items[g_ItemsInGame]							{};
-Boss			g_Boss											{};
-Enemy			g_EnemyArr[g_EnemyArrSize]						{};
-Sprite			g_TotemSprite									{};
-Weapon			g_Weapons[g_WeaponsInGame]						{};
-Player			g_Player										{};
-Sprite			g_PlayerSprites[g_PlayerSpritesSize]			{};
-Texture			g_Numbers[g_GridSize]							{};
-Texture			g_VoiceLinesArr[g_VoiceLinesSize]				{};
-Projectile		g_Projectiles[g_MaxProjectiles]					{};
-GameStates		g_Game								{ GameStates::startScreen };
-NamedTexture	g_NamedTexturesArr[g_TexturesSize]				{};
-Interactable	g_Interactables[g_InteractablesInGame]			{};
+Room			g_CurrentRoom{};
+Boss			g_Boss{};
+Player			g_Player{};
+GameStates		g_Game{ GameStates::startScreen };
+Sprite			g_TotemSprite{};
+
+// Cell			g_CellArr[g_GridSize]							{};
+// Room			g_Level[g_NrRoomsPerLevel]{};
+// Item			g_Items[g_ItemsInGame]							{};
+// Enemy			g_EnemyArr[g_MaxEnemiesPerRoom]					{};
+// Weapon			g_Weapons[g_WeaponsInGame]						{};
+// Sprite			g_PlayerSprites[g_PlayerSpritesSize]			{};
+// Texture			g_Numbers[g_GridSize]							{};
+// Texture			g_VoiceLinesArr[g_VoiceLinesSize]				{};
+// Projectile		g_Projectiles[g_MaxProjectiles]					{};
+// NamedTexture	g_NamedTexturesArr[g_TexturesSize]				{};
+// Interactable	g_Interactables[g_InteractablesInGame]			{};
+
+Cell*         g_CellArr          = new Cell[g_GridSize];
+Room*         g_Level            = new Room[g_GridSize];
+Item*         g_Items            = new Item[g_ItemsInGame];
+Enemy*        g_EnemyArr         = new Enemy[g_MaxEnemiesPerRoom];
+Weapon*       g_Weapons          = new Weapon[g_WeaponsInGame];
+Sprite*       g_PlayerSprites    = new Sprite[g_PlayerSpritesSize];
+Texture*      g_Numbers          = new Texture[g_GridSize];
+Texture*      g_VoiceLinesArr    = new Texture[g_VoiceLinesSize];
+Projectile*   g_Projectiles      = new Projectile[g_MaxProjectiles];
+NamedTexture* g_NamedTexturesArr = new NamedTexture[g_TexturesSize];
+Interactable* g_Interactables    = new Interactable[g_InteractablesInGame];
+
 #pragma endregion Other Declarations
 
 #pragma region Function Declarations

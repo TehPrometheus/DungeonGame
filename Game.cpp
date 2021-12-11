@@ -24,6 +24,29 @@ void Update(float elapsedSec)
 void End()
 {
 	DeleteTextures();
+	delete[] g_CellArr;
+	delete[] g_Level;
+	delete[] g_Items;
+	delete[] g_EnemyArr;
+	delete[] g_Weapons;
+	delete[] g_PlayerSprites;
+	delete[] g_Numbers;
+	delete[] g_VoiceLinesArr;
+	delete[] g_Projectiles;
+	delete[] g_NamedTexturesArr;
+	delete[] g_Interactables;
+	
+	g_CellArr          = nullptr;
+	g_Level            = nullptr;
+	g_Items            = nullptr;
+	g_EnemyArr         = nullptr;
+	g_Weapons          = nullptr;
+	g_PlayerSprites    = nullptr;
+	g_Numbers          = nullptr;
+	g_VoiceLinesArr    = nullptr;
+	g_Projectiles      = nullptr;
+	g_NamedTexturesArr = nullptr;
+	g_Interactables    = nullptr;
 }
 #pragma endregion gameFunctions
 
@@ -171,7 +194,7 @@ void DrawGame()
 		DrawStatusEffects(g_Player);
 		DrawInteractables();
 		DrawProjectiles();
-		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemies(g_EnemyArr, g_MaxEnemiesPerRoom);
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawBoss();
 		DrawPlayer(g_Player, g_PlayerSprites);
@@ -188,7 +211,7 @@ void DrawGame()
 		DrawStatusEffects(g_Player);
 		DrawInteractables();
 		DrawProjectiles();
-		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemies(g_EnemyArr, g_MaxEnemiesPerRoom);
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawBoss();
 		DrawPlayer(g_Player, g_PlayerSprites);
@@ -206,7 +229,7 @@ void DrawGame()
 		DrawStatusEffects(g_Player);
 		DrawInteractables();
 		DrawProjectiles();
-		DrawEnemies(g_EnemyArr, g_EnemyArrSize);
+		DrawEnemies(g_EnemyArr, g_MaxEnemiesPerRoom);
 		DrawEnemyHealthBars(g_EnemyArr);
 		DrawBoss();
 		DrawPlayer(g_Player, g_PlayerSprites);
@@ -234,7 +257,7 @@ void UpdateGame(float elapsedSec)
 		UpdateVoiceLine(g_Boss, elapsedSec);
 		UpdateAnimationPos(elapsedSec, g_Player);
 		UpdateWeaponAnimation(elapsedSec);
-		UpdateEnemies(elapsedSec, g_EnemyArr, g_EnemyArrSize, g_CellArr, g_GridSize);
+		UpdateEnemies(elapsedSec, g_EnemyArr, g_MaxEnemiesPerRoom, g_CellArr, g_GridSize);
 		ProcessMovement(g_Player, g_CellArr, g_GridSize, g_PlayerSprites, elapsedSec);
 		ProcessAnimState(g_Player, g_PlayerSprites);
 		ProcessWeaponCooldown(g_Player, elapsedSec);
@@ -581,7 +604,7 @@ void DeleteTextures()
 	}
 
 	// Delete enemy textures in enemy array
-	for (int i = 0; i < g_EnemyArrSize; i++)
+	for (int i = 0; i < g_MaxEnemiesPerRoom; i++)
 	{
 		DeleteTexture(g_EnemyArr[i].texture);
 	}
@@ -995,7 +1018,7 @@ void DrawWeaponInventory(const Player& player)
 		location.height = slotSize;
 		SetColor(g_Grey);
 		DrawRect(location);
-		if (player.weaponInventory[index].texture.id != FetchTexture("").id)
+		if (player.weaponInventory[index].texture.id != 0)
 		{
 			DrawTexture(player.weaponInventory[index].texture, location);
 		}
@@ -1029,7 +1052,7 @@ void DrawItemInventory(const Player& player)
 		location.height = slotSize;
 		SetColor(g_Grey);
 		DrawRect(location);
-		if (player.itemInventory[index].texture.id != FetchTexture("").id)
+		if (player.itemInventory[index].texture.id != 0)
 		{
 			DrawTexture(player.itemInventory[index].texture, location);
 		}
@@ -1086,7 +1109,7 @@ void AttackOnTiles(const Player& player, int tilesToScan[], int tilesAmount)
 	// Lower enemy health
 	for (int currentTile{}; currentTile < tilesAmount; ++currentTile)
 	{
-		for (int index{}; index < g_EnemyArrSize; ++index)
+		for (int index{}; index < g_MaxEnemiesPerRoom; ++index)
 		{
 			if (GetEnemyGridIndex(g_EnemyArr[index], g_CellArr, g_GridSize) == tilesToScan[currentTile])
 			{
@@ -1127,7 +1150,7 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 	{
 		player.timeTracker = 0;
 		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) - 1;
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
@@ -1137,7 +1160,7 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 	{
 		player.timeTracker = 0;
 		newIndex = GetPlayerGridIndex(player, cellArr, arrSize) + 1;
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
@@ -1151,7 +1174,7 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		{
 			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
 		}
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
@@ -1165,7 +1188,7 @@ void ProcessMovement(Player& player, Cell cellArr[], const int arrSize, Sprite S
 		{
 			newIndex = GetPlayerGridIndex(player, cellArr, arrSize);
 		}
-		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_EnemyArrSize)
+		if (cellArr[newIndex].isObstacle == false && !HasEnemy(newIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !HasInteractable(newIndex, g_Interactables, g_MaxInteractablesRoom))
 		{
 			player.dstRect = cellArr[newIndex].dstRect;
@@ -1542,7 +1565,7 @@ void DrawBowReach(const Player& player)
 	if (player.facing == Direction::up)
 	{
 		nextIndex -= g_NrCols;
-		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !g_CellArr[nextIndex].isObstacle
 			&& nextIndex > 0 && nextIndex < g_GridSize)
 		{
@@ -1553,7 +1576,7 @@ void DrawBowReach(const Player& player)
 	if (player.facing == Direction::down)
 	{
 		nextIndex += g_NrCols;
-		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !g_CellArr[nextIndex].isObstacle
 			&& nextIndex > 0 && nextIndex < g_GridSize)
 		{
@@ -1564,7 +1587,7 @@ void DrawBowReach(const Player& player)
 	if (player.facing == Direction::left)
 	{
 		nextIndex -= 1;
-		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !g_CellArr[nextIndex].isObstacle
 			&& nextIndex > 0 && nextIndex < g_GridSize)
 		{
@@ -1575,7 +1598,7 @@ void DrawBowReach(const Player& player)
 	if (player.facing == Direction::right)
 	{
 		nextIndex += 1;
-		while (!HasEnemy(nextIndex, g_EnemyArr, g_EnemyArrSize)
+		while (!HasEnemy(nextIndex, g_EnemyArr, g_MaxEnemiesPerRoom)
 			&& !g_CellArr[nextIndex].isObstacle
 			&& nextIndex > 0 && nextIndex < g_GridSize)
 		{
@@ -2247,12 +2270,12 @@ int GetRandomSpawn(Cell cellArr[], const int cellArrSize)
 
 	do {
 		spawn = rand() % g_GridSize;
-	} while (spawn == playerIndex || cellArr[spawn].isObstacle == true || HasEnemy(spawn, g_EnemyArr, g_EnemyArrSize));
+	} while (spawn == playerIndex || cellArr[spawn].isObstacle == true || HasEnemy(spawn, g_EnemyArr, g_MaxEnemiesPerRoom));
 	return spawn;
 }
 void InitEnemies()
 {
-	for (int i{}; i < g_EnemyArrSize; ++i)
+	for (int i{}; i < g_MaxEnemiesPerRoom; ++i)
 	{
 		g_EnemyArr[i] = InitializeEnemy("none");
 	}
@@ -2367,7 +2390,7 @@ void DrawEnemyHealth(const Enemy& enemy)
 }
 void DrawEnemyHealthBars(Enemy enemyArr[])
 {
-	for (int index{}; index < g_EnemyArrSize; ++index)
+	for (int index{}; index < g_MaxEnemiesPerRoom; ++index)
 	{
 		if (enemyArr[index].health > 0) 
 		{
@@ -2378,7 +2401,7 @@ void DrawEnemyHealthBars(Enemy enemyArr[])
 void ClearEnemies()
 {
 	Enemy clearedEnemy{};
-	for (int i{}; i < g_EnemyArrSize; ++i)
+	for (int i{}; i < g_MaxEnemiesPerRoom; ++i)
 	{
 		g_EnemyArr[i] = clearedEnemy;
 	}
@@ -2434,18 +2457,18 @@ void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSiz
 		int newIndexY{ enemyIndex + (indexDiffY > 0 ? g_NrCols : -g_NrCols) };
 
 		bool canGoHoriDiagCheck{ movementDecider == 1 && isInRangeDiagonal && !cellArr[newIndexX].isObstacle 
-			&& !HasEnemy(newIndexX, g_EnemyArr, g_EnemyArrSize) };
+			&& !HasEnemy(newIndexX, g_EnemyArr, g_MaxEnemiesPerRoom) };
 		bool canGoVertDiagCheck{ isInRangeDiagonal && !cellArr[newIndexY].isObstacle 
-			&& !HasEnemy(newIndexY, g_EnemyArr, g_EnemyArrSize)	};
-		bool canGoHorHorCheck{   isInRangeX && !cellArr[newIndexX].isObstacle && !HasEnemy(newIndexX, g_EnemyArr, g_EnemyArrSize) };
+			&& !HasEnemy(newIndexY, g_EnemyArr, g_MaxEnemiesPerRoom)	};
+		bool canGoHorHorCheck{   isInRangeX && !cellArr[newIndexX].isObstacle && !HasEnemy(newIndexX, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
-		bool canGoVertHorCheck{  isInRangeX && (cellArr[newIndexX].isObstacle ||  HasEnemy(newIndexX, g_EnemyArr, g_EnemyArrSize))
-											&& !cellArr[newIndexY].isObstacle && !HasEnemy(newIndexY, g_EnemyArr, g_EnemyArrSize) };
+		bool canGoVertHorCheck{  isInRangeX && (cellArr[newIndexX].isObstacle ||  HasEnemy(newIndexX, g_EnemyArr, g_MaxEnemiesPerRoom))
+											&& !cellArr[newIndexY].isObstacle && !HasEnemy(newIndexY, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
-		bool canGoVertVertCheck{ isInRangeY	&& !cellArr[newIndexY].isObstacle && !HasEnemy(newIndexY, g_EnemyArr, g_EnemyArrSize) };
+		bool canGoVertVertCheck{ isInRangeY	&& !cellArr[newIndexY].isObstacle && !HasEnemy(newIndexY, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
-		bool canGoHorVertCheck{  isInRangeY && (cellArr[newIndexY].isObstacle ||  HasEnemy(newIndexY, g_EnemyArr, g_EnemyArrSize))
-											&& !cellArr[newIndexX].isObstacle && !HasEnemy(newIndexX, g_EnemyArr, g_EnemyArrSize) };
+		bool canGoHorVertCheck{  isInRangeY && (cellArr[newIndexY].isObstacle ||  HasEnemy(newIndexY, g_EnemyArr, g_MaxEnemiesPerRoom))
+											&& !cellArr[newIndexX].isObstacle && !HasEnemy(newIndexX, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
 		if (canGoHoriDiagCheck || canGoHorHorCheck || canGoHorVertCheck)
 		{
@@ -2501,11 +2524,11 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 		int getInRangeIdxX{ enemyIndex + (indexDiffX > 0 ? 1 : -1) };
 		int getInRangeIdxY{ enemyIndex + (indexDiffY > 0 ? g_NrCols : -g_NrCols) };
 
-		bool canEscapeHorCheck{!cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_EnemyArrSize) };
-		bool canEscapeVertCheck{!cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_EnemyArrSize) };
+		bool canEscapeHorCheck{!cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_MaxEnemiesPerRoom) };
+		bool canEscapeVertCheck{!cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
-		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_EnemyArrSize) };
-		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
+		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_MaxEnemiesPerRoom) };
+		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_MaxEnemiesPerRoom) };
 		if (isTooCloseToPlayerX && isTooCloseToPlayerY && (canEscapeHorCheck || canEscapeVertCheck))
 		{
 			if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
@@ -2573,11 +2596,11 @@ void SummonerAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize)
 		int getInRangeIdxX{ enemyIndex + (indexDiffX > 0 ? 1 : -1) };
 		int getInRangeIdxY{ enemyIndex + (indexDiffY > 0 ? g_NrCols : -g_NrCols) };
 
-		bool canEscapeHorCheck{ !cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_EnemyArrSize) };
-		bool canEscapeVertCheck{ !cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_EnemyArrSize) };
+		bool canEscapeHorCheck{ !cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_MaxEnemiesPerRoom) };
+		bool canEscapeVertCheck{ !cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
-		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_EnemyArrSize) };
-		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
+		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_MaxEnemiesPerRoom) };
+		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_MaxEnemiesPerRoom) };
 
 		if (enemy.type != EnemyType::necromancer && CheckForSummonedEnemy("enemy_gnawer") == false)
 		{
@@ -3380,7 +3403,7 @@ bool CheckRoomCleared(Room& currentRoom)
 {
 	if (currentRoom.isCleared == false)
 	{
-		for (int i{}; i < g_EnemyArrSize; ++i)
+		for (int i{}; i < g_MaxEnemiesPerRoom; ++i)
 		{
 			if (g_EnemyArr[i].health > 0.01f)
 			{
