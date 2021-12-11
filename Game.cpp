@@ -2275,19 +2275,27 @@ Enemy InitializeEnemy(std::string enemyName)
 	if (enemyName == "zombie") {
 		return InitializeEnemy(EnemyType::basic, "enemy_zombie", 20.f, 5.f, 1.0f, 10);
 	}
-	if (enemyName == "bat") {
+	else if (enemyName == "bat") {
 		return InitializeEnemy(EnemyType::basic, "enemy_bat", 4.f, 1.f, 0.5f, 4);
 	}
-	if (enemyName == "archer") {
-		return InitializeEnemy(EnemyType::ranged, "enemy_archer", 15.f, 2.f, 0.5f, 5);
+	else if (enemyName == "archer") {
+		return InitializeEnemy(EnemyType::ranged, "enemy_archer", 10.f, 2.f, 0.5f, 5);
 	}
-	if (enemyName == "crate")
+	else if (enemyName == "crate")
 	{
 		return InitializeEnemy(EnemyType::destructible, "crate", 4.0f, 0.0f, 0.0f, 0);
 	}	
-	if (enemyName == "rusher")
+	else if (enemyName == "rusher")
 	{
 		return InitializeEnemy(EnemyType::basic, "enemy_rusher", 1.f, 4.f, 0.2f, 10);
+	}
+	else if (enemyName == "gnawer")
+	{
+		return InitializeEnemy(EnemyType::basic, "enemy_gnawer", 10.f, 4.f, 0.5f, 10);
+	}
+	else if (enemyName == "summoner")
+	{
+		return InitializeEnemy(EnemyType::summoner, "enemy_summoner", 15.f, 0.f, 0.2f, 5);
 	}
 	else
 		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
@@ -2474,7 +2482,9 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
 		if (isTooCloseToPlayerX && isTooCloseToPlayerY && (canEscapeHorCheck || canEscapeVertCheck))
 		{
-
+			if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+			else if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			FireArrowFromEnemy(cellArr, indexDiffX, indexDiffY, enemy, enemyIndex);
 		}
 		else if (isTooCloseToPlayerX && (canEscapeHorCheck || canEscapeVertCheck))
 		{
@@ -2496,6 +2506,120 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 		else if (inRange)
 		{
 			FireArrowFromEnemy(cellArr, indexDiffX, indexDiffY, enemy, enemyIndex);
+		}
+	}
+}
+void SummonerAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize)
+{
+	float timeBetweenActions{ enemy.timePerAction };
+	const int enemyRange{ enemy.viewRange };
+
+	const int enemyIndex{ GetEnemyGridIndex(enemy, cellArr, cellArrSize) };
+	const int playerIndex{ GetPlayerGridIndex(g_Player, cellArr, cellArrSize) };
+	const int indexDiffX{ playerIndex % g_NrCols - enemyIndex % g_NrCols };
+	const int indexDiffY{ playerIndex / g_NrCols - enemyIndex / g_NrCols };
+	const int distX{ abs(indexDiffX) };
+	const int distY{ abs(indexDiffY) };
+
+	enemy.timeTracker += elapsedSec;
+
+	if (enemy.timeTracker > timeBetweenActions)
+	{
+		enemy.timeTracker -= timeBetweenActions;
+		int movementDecider{ rand() % 2 };
+
+		bool isTooCloseToPlayerX{ distX < enemy.viewRange };
+		bool isTooCloseToPlayerY{ distY < enemy.viewRange };
+		bool inRange{ distX == 0 || distY == 0 };
+
+		int escapeIndexX{ enemyIndex };
+		if      (indexDiffX      > 0) escapeIndexX -= 1;
+		else if (indexDiffX      < 0) escapeIndexX += 1;
+		else if (rand() % 2     == 0) escapeIndexX -= 1;
+		else                          escapeIndexX += 1;
+
+		int escapeIndexY{ enemyIndex };
+		if      (indexDiffY      > 0) escapeIndexY -= g_NrCols;
+		else if (indexDiffY      < 0) escapeIndexY += g_NrCols;
+		else if (rand() % 2     == 0) escapeIndexY -= g_NrCols;
+		else                          escapeIndexY += g_NrCols;
+
+		int getInRangeIdxX{ enemyIndex + (indexDiffX > 0 ? 1 : -1) };
+		int getInRangeIdxY{ enemyIndex + (indexDiffY > 0 ? g_NrCols : -g_NrCols) };
+
+		bool canEscapeHorCheck{ !cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_EnemyArrSize) };
+		bool canEscapeVertCheck{ !cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_EnemyArrSize) };
+
+		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_EnemyArrSize) };
+		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
+
+		if (CheckForSummonedEnemy("enemy_gnawer") == false)
+		{
+			SummonEnemy("gnawer", enemyIndex);
+			/*int rightIndex(enemyIndex + 1);
+			int leftIndex(enemyIndex - 1);
+			int upIndex(enemyIndex - g_NrCols);
+			int downIndex(enemyIndex + g_NrCols);
+			if (!HasEnemy(rightIndex, g_EnemyArr, g_EnemyArrSize) && !cellArr[rightIndex].isObstacle)
+			{
+				SummonEnemy("gnawer", rightIndex);
+			}
+			else if (!HasEnemy(leftIndex, g_EnemyArr, g_EnemyArrSize) && !cellArr[leftIndex].isObstacle)
+			{
+				SummonEnemy("gnawer", leftIndex);
+			}
+			else if (!HasEnemy(downIndex, g_EnemyArr, g_EnemyArrSize) && !cellArr[downIndex].isObstacle)
+			{
+				SummonEnemy("gnawer", downIndex);
+			}
+			else if (!HasEnemy(upIndex, g_EnemyArr, g_EnemyArrSize) && !cellArr[upIndex].isObstacle)
+			{
+				SummonEnemy("gnawer", upIndex);
+			}*/
+		}
+		if (isTooCloseToPlayerX && isTooCloseToPlayerY)
+		{
+			if (movementDecider == 0 && canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			else if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+		}
+		/*else if (isTooCloseToPlayerX && isTooCloseToPlayerY && movementDecider == 1 && canEscapeVertCheck)
+		{
+			enemy.dstRect = cellArr[escapeIndexY].dstRect;
+		}*/
+		else if (isTooCloseToPlayerX)
+		{
+			if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+			else if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+		}
+		else if (isTooCloseToPlayerY)
+		{
+			if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			else if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+		}
+	}
+}
+bool CheckForSummonedEnemy(std::string enemyToCheckName)
+{
+	for (int i{}; i < g_MaxEnemiesPerRoom; i++)
+	{
+		if (g_EnemyArr[i].texture.id == FetchTexture(enemyToCheckName).id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+void SummonEnemy(std::string enemyToSummonName, int location)
+{
+	bool summoned{ false };
+	for (int i{}; i < g_MaxEnemiesPerRoom; i++)
+	{
+		if (g_EnemyArr[i].maxHealth == 0.f && !summoned)
+		{
+			g_EnemyArr[i] = InitializeEnemy(enemyToSummonName);
+			g_EnemyArr[i].dstRect = g_CellArr[location].dstRect;
+			g_EnemyArr[i].animationPos = g_EnemyArr[i].dstRect;
+			summoned = true;
 		}
 	}
 }
@@ -2542,6 +2666,10 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 		else if (enemyArr[index].type == EnemyType::ranged)
 		{
 			RangedEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
+		}
+		else if (enemyArr[index].type == EnemyType::summoner)
+		{
+			SummonerAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
 		}
 		UpdateAnimationPos(elapsedSec, enemyArr[index]);
 	}
@@ -3097,6 +3225,7 @@ void InitializeRooms(Room level[])
 	combatRoom3.rightDoorDestination = RoomID::horizontalHallway3;
 	combatRoom3.bottomDoorDestination = RoomID::verticalHallway3;
 	combatRoom3.leftDoorDestination = RoomID::horizontalHallway4;
+	combatRoom3.enemyShorthand[1] = { "summoner", GetIndex(2, 5) };
 
 	Room& verticalHallway3 = level[11];
 	verticalHallway3.id = RoomID::verticalHallway3;

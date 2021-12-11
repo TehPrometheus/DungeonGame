@@ -57,6 +57,7 @@ enum class EnemyType
 	basic,
 	ranged,
 	destructible,
+	summoner,
 	boss
 };
 enum class WeaponType
@@ -444,14 +445,21 @@ int GetEnemyGridIndex(Enemy& enemy, Cell cellArr[], const int arrSize);
 void InitEnemies();
 void ClearEnemies();
 void DestroyEnemy(Enemy& enemy);
+
 void DrawEnemyHealth(const Enemy& enemy);
 void DrawEnemyHealthBars(Enemy enemyArr[]);
 void DrawEnemies(Enemy enemyArr[], int arrSize);
+
 void SpawnEnemies(const EnemyShorthand enemies[]);
 void UpdateAnimationPos(float elapsedSec, Enemy& enemy);
 void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize);
+
 void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
 void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
+void SummonerAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
+bool CheckForSummonedEnemy(std::string enemyToCheckName);
+void SummonEnemy(std::string enemyToSummonName, int location);
+
 void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell cellArr[], int cellArrSize);
 void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDiffY, Enemy& enemy, int enemyIndex);
 #pragma endregion enemyHandling

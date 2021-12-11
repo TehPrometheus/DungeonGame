@@ -13,7 +13,7 @@ const Uint32 g_MaxElapsedTime{ 100 }; // limit in case of breakpoint
 
 #pragma region windowInformation
 
-bool g_IsVSyncOn{ true };
+bool g_IsVSyncOn{ false };
 #pragma endregion windowInformation
 
 #pragma region coreImplementations
