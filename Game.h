@@ -58,6 +58,7 @@ enum class EnemyType
 	ranged,
 	destructible,
 	summoner,
+	necromancer,
 	boss
 };
 enum class WeaponType
@@ -457,6 +458,8 @@ void DamageAllEnemies(Enemy EnemyArr[], const int enemyArrSize);
 void BasicEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
 void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
 void SummonerAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize);
+
+bool NecromancerCheck();
 bool CheckForSummonedEnemy(std::string enemyToCheckName);
 void SummonEnemy(std::string enemyToSummonName, int location);
 
