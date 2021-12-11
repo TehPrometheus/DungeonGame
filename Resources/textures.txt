@@ -45,9 +45,11 @@
 {zombie_idle_anim.png,zombie_idle_anim}
 {zombie_run_right_anim.png,zombie_run_right_anim}
 {zombie_run_left_anim.png,zombie_run_left_anim}
+
 {game_won_screen.png,game_won_screen}
 {game_over_screen.png,game_over_screen}
 {starting_screen.png,starting_screen}
+
 {weapon_inventory.png,weapon_inventory}
 
 {basic_axe_up.png,basic_axe_up}
@@ -80,9 +82,18 @@
 
 {enemy_rusher.png,enemy_rusher}
 {enemy_archer.png,enemy_archer}
+{enemy_gnawer.png,enemy_gnawer}
+{enemy_summoner.png,enemy_summoner}
+{enemy_necromancer.png,enemy_necromancer}
+{enemy_necrospawn.png,enemy_necrospawn}
 
 {health_potion.png,health_potion}
 {speed_potion.png,speed_potion}
 {strength_potion.png,strength_potion}
 {regen_potion.png,regen_potion}
 {shield_potion.png,shield_potion}
+
+{giant_blade_up.png,giant_blade_up}
+{giant_blade_down.png,giant_blade_down}
+{giant_blade_left.png,giant_blade_left}
+{giant_blade_right.png,giant_blade_right}

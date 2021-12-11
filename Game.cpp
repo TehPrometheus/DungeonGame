@@ -1682,6 +1682,7 @@ void InitWeapons()
 	g_Weapons[1] = InitializeWeapon("bow", "bow_right", WeaponType::bow, 1.0f);
 	g_Weapons[2] = InitializeWeapon("basic_axe", "basic_axe_up", WeaponType::sword, 4.0f);
 	g_Weapons[3] = InitializeWeapon("spear", "spear_up", WeaponType::spear, 3.f);
+	g_Weapons[4] = InitializeWeapon("giant_blade", "giant_blade_up", WeaponType::sword, 8.0f);
 }
 Weapon InitializeWeapon(const std::string& weaponName, const std::string& textureName, const WeaponType& type, float damage)
 {
@@ -1716,6 +1717,11 @@ void SetWeaponCooldown(const Weapon& weapon)
 	{
 		g_Player.isWeaponOnCooldown = true;
 		g_Player.coolDownTimer = 0.1f;
+	}
+	if (weapon.name == "giant_blade")
+	{
+		g_Player.isWeaponOnCooldown = true;
+		g_Player.coolDownTimer = 1.0f;
 	}
 }
 void UpdateWeaponAnimation(float elapsedSec)
@@ -2275,19 +2281,35 @@ Enemy InitializeEnemy(std::string enemyName)
 	if (enemyName == "zombie") {
 		return InitializeEnemy(EnemyType::basic, "enemy_zombie", 20.f, 5.f, 1.0f, 10);
 	}
-	if (enemyName == "bat") {
+	else if (enemyName == "bat") {
 		return InitializeEnemy(EnemyType::basic, "enemy_bat", 4.f, 1.f, 0.5f, 4);
 	}
-	if (enemyName == "archer") {
-		return InitializeEnemy(EnemyType::ranged, "enemy_archer", 15.f, 2.f, 0.5f, 5);
+	else if (enemyName == "archer") {
+		return InitializeEnemy(EnemyType::ranged, "enemy_archer", 10.f, 2.f, 0.5f, 5);
 	}
-	if (enemyName == "crate")
+	else if (enemyName == "crate")
 	{
 		return InitializeEnemy(EnemyType::destructible, "crate", 4.0f, 0.0f, 0.0f, 0);
 	}	
-	if (enemyName == "rusher")
+	else if (enemyName == "rusher")
 	{
 		return InitializeEnemy(EnemyType::basic, "enemy_rusher", 1.f, 4.f, 0.2f, 10);
+	}
+	else if (enemyName == "gnawer")
+	{
+		return InitializeEnemy(EnemyType::basic, "enemy_gnawer", 10.f, 4.f, 0.5f, 10);
+	}
+	else if (enemyName == "summoner")
+	{
+		return InitializeEnemy(EnemyType::summoner, "enemy_summoner", 15.f, 0.f, 0.2f, 5);
+	}
+	else if (enemyName == "necromancer")
+	{
+		return InitializeEnemy(EnemyType::necromancer, "enemy_necromancer", 15.f, 0.f, 0.2f, 5);
+	}
+	else if (enemyName == "necrospawn")
+	{
+		return InitializeEnemy(EnemyType::basic, "enemy_necrospawn", 15.f, 5.0f, 0.8f, 10);
 	}
 	else
 		return InitializeEnemy(EnemyType::basic, "not_found", 0.0f, 0.0f, 100.f, 0);
@@ -2474,7 +2496,9 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
 		if (isTooCloseToPlayerX && isTooCloseToPlayerY && (canEscapeHorCheck || canEscapeVertCheck))
 		{
-
+			if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+			else if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			FireArrowFromEnemy(cellArr, indexDiffX, indexDiffY, enemy, enemyIndex);
 		}
 		else if (isTooCloseToPlayerX && (canEscapeHorCheck || canEscapeVertCheck))
 		{
@@ -2496,6 +2520,109 @@ void RangedEnemyAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSi
 		else if (inRange)
 		{
 			FireArrowFromEnemy(cellArr, indexDiffX, indexDiffY, enemy, enemyIndex);
+		}
+	}
+}
+void SummonerAI(float elapsedSec, Enemy& enemy, Cell cellArr[], int cellArrSize)
+{
+	float timeBetweenActions{ enemy.timePerAction };
+	const int enemyRange{ enemy.viewRange };
+
+	const int enemyIndex{ GetEnemyGridIndex(enemy, cellArr, cellArrSize) };
+	const int playerIndex{ GetPlayerGridIndex(g_Player, cellArr, cellArrSize) };
+	const int indexDiffX{ playerIndex % g_NrCols - enemyIndex % g_NrCols };
+	const int indexDiffY{ playerIndex / g_NrCols - enemyIndex / g_NrCols };
+	const int distX{ abs(indexDiffX) };
+	const int distY{ abs(indexDiffY) };
+
+	enemy.timeTracker += elapsedSec;
+
+	if (enemy.timeTracker > timeBetweenActions)
+	{
+		enemy.timeTracker -= timeBetweenActions;
+		int movementDecider{ rand() % 2 };
+
+		bool isTooCloseToPlayerX{ distX < enemy.viewRange };
+		bool isTooCloseToPlayerY{ distY < enemy.viewRange };
+		bool inRange{ distX == 0 || distY == 0 };
+
+		int escapeIndexX{ enemyIndex };
+		if      (indexDiffX      > 0) escapeIndexX -= 1;
+		else if (indexDiffX      < 0) escapeIndexX += 1;
+		else if (rand() % 2     == 0) escapeIndexX -= 1;
+		else                          escapeIndexX += 1;
+
+		int escapeIndexY{ enemyIndex };
+		if      (indexDiffY      > 0) escapeIndexY -= g_NrCols;
+		else if (indexDiffY      < 0) escapeIndexY += g_NrCols;
+		else if (rand() % 2     == 0) escapeIndexY -= g_NrCols;
+		else                          escapeIndexY += g_NrCols;
+
+		int getInRangeIdxX{ enemyIndex + (indexDiffX > 0 ? 1 : -1) };
+		int getInRangeIdxY{ enemyIndex + (indexDiffY > 0 ? g_NrCols : -g_NrCols) };
+
+		bool canEscapeHorCheck{ !cellArr[escapeIndexX].isObstacle && !HasEnemy(escapeIndexX, g_EnemyArr, g_EnemyArrSize) };
+		bool canEscapeVertCheck{ !cellArr[escapeIndexY].isObstacle && !HasEnemy(escapeIndexY, g_EnemyArr, g_EnemyArrSize) };
+
+		bool canGetInRangeHorCheck{ !cellArr[getInRangeIdxX].isObstacle && !HasEnemy(getInRangeIdxX, g_EnemyArr, g_EnemyArrSize) };
+		bool canGetInRangeVertCheck{ !cellArr[getInRangeIdxY].isObstacle && !HasEnemy(getInRangeIdxY, g_EnemyArr, g_EnemyArrSize) };
+
+		if (enemy.type != EnemyType::necromancer && CheckForSummonedEnemy("enemy_gnawer") == false)
+		{
+			SummonEnemy("gnawer", enemyIndex);
+			
+		}
+		if (isTooCloseToPlayerX && isTooCloseToPlayerY)
+		{
+			if (movementDecider == 0 && canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			else if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+		}
+		else if (isTooCloseToPlayerX)
+		{
+			if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+			else if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+		}
+		else if (isTooCloseToPlayerY)
+		{
+			if (canEscapeHorCheck) enemy.dstRect = cellArr[escapeIndexX].dstRect;
+			else if (canEscapeVertCheck) enemy.dstRect = cellArr[escapeIndexY].dstRect;
+		}
+	}
+}
+bool CheckForSummonedEnemy(std::string enemyToCheckName)
+{
+	for (int i{}; i < g_MaxEnemiesPerRoom; i++)
+	{
+		if (g_EnemyArr[i].texture.id == FetchTexture(enemyToCheckName).id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+bool NecromancerCheck()
+{
+	int location{};
+	for (int i{}; i < g_MaxEnemiesPerRoom; ++i)
+	{
+		if (g_EnemyArr[i].type == EnemyType::necromancer)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+void SummonEnemy(std::string enemyToSummonName, int location)
+{
+	bool summoned{ false };
+	for (int i{}; i < g_MaxEnemiesPerRoom; i++)
+	{
+		if (g_EnemyArr[i].maxHealth == 0.f && !summoned)
+		{
+			g_EnemyArr[i] = InitializeEnemy(enemyToSummonName);
+			g_EnemyArr[i].dstRect = g_CellArr[location].dstRect;
+			g_EnemyArr[i].animationPos = g_EnemyArr[i].dstRect;
+			summoned = true;
 		}
 	}
 }
@@ -2530,11 +2657,21 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 {
 	for (int index{}; index < enemyArrSize; ++index)
 	{
+		
 		if (enemyArr[index].health <= 0.f && enemyArr[index].maxHealth != 0)
-		{ 
-			if (g_CurrentRoom.id != RoomID::bossRoom) RollForDrop(enemyArr[index]);
+		{
+			if (NecromancerCheck() && enemyArr[index].texture.id != FetchTexture("enemy_necrospawn").id)
+			{
+				SummonEnemy("necrospawn", GetEnemyGridIndex(enemyArr[index], cellArr, cellArrSize));
+			}
+			if (g_CurrentRoom.id != RoomID::bossRoom
+				&& enemyArr[index].texture.id != FetchTexture("enemy_gnawer").id
+				&& enemyArr[index].texture.id != FetchTexture("enemy_necrospawn").id)
+			{
+				RollForDrop(enemyArr[index]);
+			}
 			DestroyEnemy(enemyArr[index]);
-		} 
+		}
 		else if (enemyArr[index].type == EnemyType::basic)
 		{
 			BasicEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
@@ -2542,6 +2679,14 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 		else if (enemyArr[index].type == EnemyType::ranged)
 		{
 			RangedEnemyAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
+		}
+		else if (enemyArr[index].type == EnemyType::summoner)
+		{
+			SummonerAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
+		}
+		else if (enemyArr[index].type == EnemyType::necromancer)
+		{
+			SummonerAI(elapsedSec, enemyArr[index], cellArr, cellArrSize);
 		}
 		UpdateAnimationPos(elapsedSec, enemyArr[index]);
 	}
@@ -3006,8 +3151,8 @@ void InitializeRooms(Room level[])
 	startingRoom.topDoorDestination = RoomID::verticalHallway1;
 	startingRoom.enemyShorthand[0] = { "bat", GetIndex(1, 1) };
 	startingRoom.enemyShorthand[1] = { "bat", GetIndex(1, 11) };
-	startingRoom.interactableShort[0] = {"basic_sword", 70, InteractableType::weaponDrop};
-	startingRoom.interactableShort[1] = {"health_potion", 72, InteractableType::itemDrop};
+	startingRoom.interactableShort[0] = { "basic_sword", 70, InteractableType::weaponDrop };
+	startingRoom.interactableShort[1] = { "health_potion", 72, InteractableType::itemDrop };
 
 	Room& verticalHallway1 = level[1];
 	verticalHallway1.id = RoomID::verticalHallway1;
@@ -3089,7 +3234,7 @@ void InitializeRooms(Room level[])
 	horizontalHallway3.enemyShorthand[0] = { "archer", GetIndex(4, 2) };
 	horizontalHallway3.enemyShorthand[1] = { "zombie", GetIndex(3, 5) };
 	horizontalHallway3.enemyShorthand[2] = { "zombie", GetIndex(5, 5) };
-	
+
 
 	Room& combatRoom3 = level[10];
 	combatRoom3.id = RoomID::combatRoom3;
@@ -3097,17 +3242,27 @@ void InitializeRooms(Room level[])
 	combatRoom3.rightDoorDestination = RoomID::horizontalHallway3;
 	combatRoom3.bottomDoorDestination = RoomID::verticalHallway3;
 	combatRoom3.leftDoorDestination = RoomID::horizontalHallway4;
+	combatRoom3.enemyShorthand[0] = { "summoner", GetIndex(2, 5) };
+	combatRoom3.enemyShorthand[1] = { "necromancer", GetIndex(6, 5) };
+	combatRoom3.enemyShorthand[2] = { "zombie", GetIndex(4, 7) };
 
 	Room& verticalHallway3 = level[11];
 	verticalHallway3.id = RoomID::verticalHallway3;
 	verticalHallway3.layoutToLoad = "vertical_hallway_3.room";
 	verticalHallway3.topDoorDestination = RoomID::combatRoom3;
 	verticalHallway3.bottomDoorDestination = RoomID::pickupRoom3;
+	verticalHallway3.enemyShorthand[0] = { "zombie", GetIndex(5, 4) };
+	verticalHallway3.enemyShorthand[1] = { "zombie", GetIndex(5, 6) };
+	verticalHallway3.enemyShorthand[2] = { "zombie", GetIndex(5, 8) };
+	verticalHallway3.enemyShorthand[3] = { "necromancer", GetIndex(7, 6) };
 
 	Room& pickupRoom3 = level[12];
 	pickupRoom3.id = RoomID::pickupRoom3;
 	pickupRoom3.layoutToLoad = "pickup_room_3.room";
 	pickupRoom3.topDoorDestination = RoomID::verticalHallway3;
+	pickupRoom3.interactableShort[0] = { "health_potion", GetIndex(2,4), InteractableType::itemDrop };
+	pickupRoom3.interactableShort[1] = { "shield_potion", GetIndex(2,8), InteractableType::itemDrop };
+	pickupRoom3.interactableShort[2] = { "giant_blade", GetIndex(6,6), InteractableType::weaponDrop };
 
 	Room& horizontalHallway4 = level[13];
 	horizontalHallway4.id = RoomID::horizontalHallway4;
