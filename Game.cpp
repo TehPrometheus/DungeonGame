@@ -24,29 +24,7 @@ void Update(float elapsedSec)
 void End()
 {
 	DeleteTextures();
-	delete[] g_CellArr;
-	delete[] g_Level;
-	delete[] g_Items;
-	delete[] g_EnemyArr;
-	delete[] g_Weapons;
-	delete[] g_PlayerSprites;
-	delete[] g_Numbers;
-	delete[] g_VoiceLinesArr;
-	delete[] g_Projectiles;
-	delete[] g_NamedTexturesArr;
-	delete[] g_Interactables;
-	
-	g_CellArr          = nullptr;
-	g_Level            = nullptr;
-	g_Items            = nullptr;
-	g_EnemyArr         = nullptr;
-	g_Weapons          = nullptr;
-	g_PlayerSprites    = nullptr;
-	g_Numbers          = nullptr;
-	g_VoiceLinesArr    = nullptr;
-	g_Projectiles      = nullptr;
-	g_NamedTexturesArr = nullptr;
-	g_Interactables    = nullptr;
+	DeleteGlobalArrays();
 }
 #pragma endregion gameFunctions
 
@@ -71,14 +49,6 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_i:
 		PrintGameInfo();
 		break;
-	case SDLK_o: 
-		{
-			// opens all doors. Remove when room clearing is implemented
-		OpenDoors(g_CellArr, g_GridSize);
-
-		std::cerr << "ALL DOOR TEXTURES ARE NOW SET TO OPEN" << std::endl;
-		break;
-		}
 	case SDLK_1:
 		itemslot = 0;
 		if (g_Player.selectedItem != itemslot)
@@ -153,9 +123,6 @@ void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 	case (SDL_BUTTON_LEFT):
 		ClickStart(e);
 		UseWeapon(g_Player);
-		break;
-	case (SDL_BUTTON_RIGHT):
-		UseItem(g_Player, g_Player.selectedItem);
 		break;
 	}
 }
@@ -338,6 +305,32 @@ void SetEndScreen(Boss boss, Player& player)
 	{
 		g_Game = GameStates::gameWon;
 	}
+}
+void DeleteGlobalArrays()
+{
+	delete[] g_CellArr;
+	delete[] g_Level;
+	delete[] g_Items;
+	delete[] g_EnemyArr;
+	delete[] g_Weapons;
+	delete[] g_PlayerSprites;
+	delete[] g_Numbers;
+	delete[] g_VoiceLinesArr;
+	delete[] g_Projectiles;
+	delete[] g_NamedTexturesArr;
+	delete[] g_Interactables;
+
+	g_CellArr = nullptr;
+	g_Level = nullptr;
+	g_Items = nullptr;
+	g_EnemyArr = nullptr;
+	g_Weapons = nullptr;
+	g_PlayerSprites = nullptr;
+	g_Numbers = nullptr;
+	g_VoiceLinesArr = nullptr;
+	g_Projectiles = nullptr;
+	g_NamedTexturesArr = nullptr;
+	g_Interactables = nullptr;
 }
 #pragma endregion gameHandling
 
@@ -600,32 +593,62 @@ void DeleteTextures()
 	// Delete player textures in player struct
 	DeleteTexture(g_Player.sprite.texture);
 
+	// Delete item textures in player struct
+	for (int i{ 0 }; i < g_ItemInventorySize; ++i)
+	{
+		DeleteTexture(g_Player.itemInventory[i].texture);
+	}
+
+	// Delete weapon textures in player struct
+	for (int i{ 0 }; i < g_WeaponInventorySize; ++i)
+	{
+		DeleteTexture(g_Player.weaponInventory[i].texture);
+	}
+
+	// Delete weapon textures in weapon array
+	for (int i{ 0 }; i < g_WeaponsInGame; ++i)
+	{
+		DeleteTexture(g_Weapons[i].texture);
+	}
+
+	// Delete item textures in weapon array
+	for (int i{ 0 }; i < g_ItemsInGame; ++i)
+	{
+		DeleteTexture(g_Items[i].texture);
+	}
+
+	// Delete projectile textures in projectile array
+	for (int i{ 0 }; i < g_MaxProjectiles; ++i)
+	{
+		DeleteTexture(g_Projectiles[i].texture);
+	}
+
 	// Delete named textures array
-	for (int i = 0; i < g_TexturesSize; i++)
+	for (int i{ 0 }; i < g_TexturesSize; ++i)
 	{
 		DeleteTexture(g_NamedTexturesArr[i].texture);
 	}
 
 	// Delete enemy textures in enemy array
-	for (int i = 0; i < g_MaxEnemiesPerRoom; i++)
+	for (int i{ 0 }; i < g_MaxEnemiesPerRoom; ++i)
 	{
 		DeleteTexture(g_EnemyArr[i].texture);
 	}
 
 	// Delete textures stored in the grid array
-	for (int i = 0; i < g_GridSize; i++)
+	for (int i{ 0 }; i < g_GridSize; ++i)
 	{
 		DeleteTexture(g_CellArr[i].texture);
 	}
 
 	// Delete number textures array
-	for (int i = 0; i < g_GridSize; i++)
+	for (int i{ 0 }; i < g_GridSize; ++i)
 	{
 		DeleteTexture(g_Numbers[i]);
 	}
 
 	// Delete textures stored in the g_PlayerSprites array
-	for (int i = 0; i < g_PlayerSpritesSize; i++)
+	for (int i{ 0 }; i < g_PlayerSpritesSize; ++i)
 	{
 		DeleteTexture(g_PlayerSprites[i].texture);
 	}
@@ -633,7 +656,7 @@ void DeleteTextures()
 	// Delete Boss related textures
 	DeleteTexture(g_Boss.sprite.texture);
 	DeleteTexture(g_TotemSprite.texture);
-	for (int i = 0; i < g_VoiceLinesSize; i++)
+	for (int i{ 0 }; i < g_VoiceLinesSize; ++i)
 	{
 		DeleteTexture(g_VoiceLinesArr[i]);
 	}
@@ -2079,7 +2102,15 @@ void RollForDrop(Enemy& enemy)
 		type = InteractableType::weaponDrop;
 	}
 
-	if (itemToSpawn != "")
+	const int underTopDoor{ 19 };
+	const int nextToLeftDoor{ 52 };
+	const int nextTorightDoor{ 63 };
+	const int abovebottomDoor{ 97 };
+	if (itemToSpawn != ""
+		&& location != underTopDoor
+		&& location != nextToLeftDoor
+		&& location != nextTorightDoor
+		&& location != abovebottomDoor)
 	{
 		SpawnInteractable(itemToSpawn, location, type);
 		AddInteractableToRoom(g_CurrentRoom, itemToSpawn, location, type);

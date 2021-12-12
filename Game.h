@@ -173,7 +173,7 @@ struct WeaponAnimation
 	bool isPlaying{ false };
 	Rectf position;
 };
-struct Projectile // WORK IN PROGRESS
+struct Projectile 
 {
 	std::string type;
 	float speed;
@@ -299,18 +299,6 @@ Player			g_Player{};
 GameStates		g_Game{ GameStates::startScreen };
 Sprite			g_TotemSprite{};
 
-// Cell			g_CellArr[g_GridSize]							{};
-// Room			g_Level[g_NrRoomsPerLevel]{};
-// Item			g_Items[g_ItemsInGame]							{};
-// Enemy			g_EnemyArr[g_MaxEnemiesPerRoom]					{};
-// Weapon			g_Weapons[g_WeaponsInGame]						{};
-// Sprite			g_PlayerSprites[g_PlayerSpritesSize]			{};
-// Texture			g_Numbers[g_GridSize]							{};
-// Texture			g_VoiceLinesArr[g_VoiceLinesSize]				{};
-// Projectile		g_Projectiles[g_MaxProjectiles]					{};
-// NamedTexture	g_NamedTexturesArr[g_TexturesSize]				{};
-// Interactable	g_Interactables[g_InteractablesInGame]			{};
-
 Cell*         g_CellArr          = new Cell[g_GridSize];
 Room*         g_Level            = new Room[g_GridSize];
 Item*         g_Items            = new Item[g_ItemsInGame];
@@ -335,6 +323,7 @@ void DrawStartScreen();
 void UpdateGame(float elapsedSec);
 void ClickStart(const SDL_MouseButtonEvent& e);
 void SetEndScreen(Boss boss, Player& player);
+void DeleteGlobalArrays();
 #pragma endregion gameHandling
 
 #pragma region utilFunctions
