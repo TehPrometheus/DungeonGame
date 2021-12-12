@@ -71,14 +71,6 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_i:
 		PrintGameInfo();
 		break;
-	case SDLK_o: 
-		{
-			// opens all doors. Remove when room clearing is implemented
-		OpenDoors(g_CellArr, g_GridSize);
-
-		std::cerr << "ALL DOOR TEXTURES ARE NOW SET TO OPEN" << std::endl;
-		break;
-		}
 	case SDLK_1:
 		itemslot = 0;
 		if (g_Player.selectedItem != itemslot)
