@@ -2079,7 +2079,15 @@ void RollForDrop(Enemy& enemy)
 		type = InteractableType::weaponDrop;
 	}
 
-	if (itemToSpawn != "")
+	const int underTopDoor{ 19 };
+	const int nextToLeftDoor{ 52 };
+	const int nextTorightDoor{ 63 };
+	const int abovebottomDoor{ 97 };
+	if (itemToSpawn != ""
+		&& location != underTopDoor
+		&& location != nextToLeftDoor
+		&& location != nextTorightDoor
+		&& location != abovebottomDoor)
 	{
 		SpawnInteractable(itemToSpawn, location, type);
 		AddInteractableToRoom(g_CurrentRoom, itemToSpawn, location, type);
