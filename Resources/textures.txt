@@ -2,10 +2,6 @@
 {enemy_bat.png,enemy_bat}
 {enemy_zombie.png,enemy_zombie}
 {not_found.png,not_found,false}
-{player_down.png,player_down,false}
-{player_left.png,player_left,false}
-{player_up.png,player_up,false}
-{player_right.png,player_right,false}
 {door_closed.png,door_closed,true}
 {door_open.png,door_open,false}
 {door_transparent_closed.png,door_transparent_closed,true}
@@ -41,10 +37,6 @@
 {knight_run_down_anim.png,knight_run_down_anim}
 {knight_run_up_anim.png,knight_run_up_anim}
 {knight_hit_anim.png,knight_hit_anim}
-
-{zombie_idle_anim.png,zombie_idle_anim}
-{zombie_run_right_anim.png,zombie_run_right_anim}
-{zombie_run_left_anim.png,zombie_run_left_anim}
 
 {game_won_screen.png,game_won_screen}
 {game_over_screen.png,game_over_screen}

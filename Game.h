@@ -483,27 +483,27 @@ void FireArrowFromEnemy(Cell cellArr[], const int indexDiffX, const int indexDif
 #pragma region bossHandling
 std::string GetRandomMinion();
 
-bool IsBossDead();
-bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile);
+bool IsBossDead(Boss& boss);
+bool IsBossOnTilesToScan(const Boss& boss, int tilesToScan[], int currentTile);
 
-float BossDistanceToChargePoint();
-float GetAngle(Boss boss, Player player);
+float BossDistanceToChargePoint(const Boss& boss);
+float GetAngle(Boss& boss);
 
 
-void InitBoss();
-void DrawBoss();
-void InitTotems();
-void DrawBossHealth();
-void PrepareToCharge();
-void BossLookAtPlayer();
-void DrawTotems(Sprite totemsprite);
-void UpdateTotems(float elapsedSec);
-void ChargeAtPlayer(float elapsedSec);
-void BossAttackPlayer(float elapsedSec);
-void UpdateBossAIState(float elapsedSec);
-void UpdateBossAnimState(float elapsedSec);
+void InitBoss(Boss& boss);
+void DrawBoss(const Room& room, Boss& boss, const Texture voiceLines[]);
+void InitTotems(Sprite& totemSprite);
+void DrawBossHealth(Boss& boss);
+void PrepareToCharge(Boss& boss);
+void BossLookAtPlayer(Boss& boss, Player& player);
+void DrawTotems(Sprite& totemSprite, const Room& room);
+void UpdateTotems(Sprite& totemSprite, const Room& room, float elapsedSec);
+void ChargeAtPlayer(Boss& boss, float elapsedSec);
+void BossAttackPlayer(Boss& boss, Player& player, float elapsedSec);
+void UpdateBossAIState(Boss& boss, float elapsedSec);
+void UpdateBossAnimState(const Room& room, Boss& boss, float elapsedSec);
 void InitVoiceLines(Texture voiceLinesArr[]);
-void UpdateVoiceLine(Boss& boss, float elapsedSec);
+void UpdateVoiceLine(Boss& boss, const Room& room, float elapsedSec);
 void DrawVoiceLine(const Boss& boss, const Texture voiceLinesArr[]);
 #pragma endregion bossHandling
 

@@ -171,7 +171,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 void InitGame()
 {
 	InitTextures(g_NamedTexturesArr, g_TexturesSize, g_Numbers, g_GridSize);
-	InitTotems();
+	InitTotems(g_TotemSprite);
 	InitItems();
 	InitWeapons();
 	InitializeRooms(g_Level);
@@ -191,7 +191,7 @@ void DrawGame()
 	}
 	case GameStates::playing:
 	{
-		DrawTotems(g_TotemSprite);
+		DrawTotems(g_TotemSprite, g_CurrentRoom);
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
@@ -199,7 +199,7 @@ void DrawGame()
 		DrawProjectiles();
 		DrawEnemies(g_EnemyArr, g_MaxEnemiesPerRoom);
 		DrawEnemyHealthBars(g_EnemyArr);
-		DrawBoss();
+		DrawBoss(g_CurrentRoom, g_Boss, g_VoiceLinesArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawWeaponInventory(g_Player);
 		DrawItemInventory(g_Player);
@@ -208,7 +208,7 @@ void DrawGame()
 	}
 	case GameStates::gameOver:
 	{
-		DrawTotems(g_TotemSprite);
+		DrawTotems(g_TotemSprite, g_CurrentRoom);
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
@@ -216,7 +216,7 @@ void DrawGame()
 		DrawProjectiles();
 		DrawEnemies(g_EnemyArr, g_MaxEnemiesPerRoom);
 		DrawEnemyHealthBars(g_EnemyArr);
-		DrawBoss();
+		DrawBoss(g_CurrentRoom, g_Boss, g_VoiceLinesArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawWeaponInventory(g_Player);
 		DrawItemInventory(g_Player);
@@ -226,7 +226,7 @@ void DrawGame()
 	}
 	case GameStates::gameWon:
 	{
-		DrawTotems(g_TotemSprite);
+		DrawTotems(g_TotemSprite, g_CurrentRoom);
 		DrawGridTextures(g_CellArr, g_NrRows, g_NrCols);
 		DrawReach(g_Player);
 		DrawStatusEffects(g_Player);
@@ -234,7 +234,7 @@ void DrawGame()
 		DrawProjectiles();
 		DrawEnemies(g_EnemyArr, g_MaxEnemiesPerRoom);
 		DrawEnemyHealthBars(g_EnemyArr);
-		DrawBoss();
+		DrawBoss(g_CurrentRoom, g_Boss, g_VoiceLinesArr);
 		DrawPlayer(g_Player, g_PlayerSprites);
 		DrawWeaponInventory(g_Player);
 		DrawItemInventory(g_Player);
@@ -254,10 +254,10 @@ void UpdateGame(float elapsedSec)
 
 		break;
 	case GameStates::playing:
-		UpdateTotems(elapsedSec);
-		UpdateBossAnimState(elapsedSec);
-		UpdateBossAIState(elapsedSec);
-		UpdateVoiceLine(g_Boss, elapsedSec);
+		UpdateTotems(g_TotemSprite, g_CurrentRoom, elapsedSec);
+		UpdateBossAnimState(g_CurrentRoom, g_Boss, elapsedSec);
+		UpdateBossAIState(g_Boss, elapsedSec);
+		UpdateVoiceLine(g_Boss, g_CurrentRoom,elapsedSec);
 		UpdateAnimationPos(elapsedSec, g_Player);
 		UpdateWeaponAnimation(elapsedSec);
 		UpdateEnemies(elapsedSec, g_EnemyArr, g_MaxEnemiesPerRoom, g_CellArr, g_GridSize);
@@ -2732,12 +2732,12 @@ void UpdateEnemies(float elapsedSec, Enemy enemyArr[], int enemyArrSize, Cell ce
 #pragma endregion enemyHandling
 
 #pragma region bossHandling
-bool IsBossDead()
+bool IsBossDead(Boss& boss)
 {
-	if (g_Boss.health <= 0)
+	if (boss.health <= 0)
 	{
-		g_Boss.AIState = BossAIStates::death;
-		g_Boss.animState = AnimStates::death;
+		boss.AIState = BossAIStates::death;
+		boss.animState = AnimStates::death;
 		g_Game = GameStates::gameWon;
 		return true;
 	}
@@ -2746,137 +2746,139 @@ bool IsBossDead()
 		return false;
 	}
 }
-bool IsBossOnTilesToScan(Boss boss, int tilesToScan[], int currentTile)
+bool IsBossOnTilesToScan(const Boss& boss, int tilesToScan[], int currentTile)
 {
 	Rectf tile{ g_CellArr[tilesToScan[currentTile]].dstRect };
-	return IsOverlapping(g_Boss.dstRect, tile);
+	return IsOverlapping(boss.dstRect, tile);
 }
 
-float BossDistanceToChargePoint()
+float BossDistanceToChargePoint(const Boss& boss)
 {
-	return sqrtf(powf((g_Boss.dstRect.left - g_Boss.chargeEndPoint.x), 2) + powf(g_Boss.dstRect.bottom - g_Boss.chargeEndPoint.y, 2));
+	return sqrtf(powf(boss.dstRect.left - boss.chargeEndPoint.x, 2) + 
+				 powf(boss.dstRect.bottom - boss.chargeEndPoint.y, 2));
 }
-float GetAngle(Boss boss, Player player)
+float GetAngle(Boss& boss)
 {
 	return atan2(boss.delta.y , boss.delta.x);
 }
 
-void InitBoss()
+void InitBoss(Boss& boss)
 {
-	g_Boss.AIState = BossAIStates::idle;
-	g_Boss.animState = AnimStates::idleRight;
-	g_Boss.maxHealth = 300.f;
-	g_Boss.health = g_Boss.maxHealth;
-	g_Boss.damageOutput = 0.8f;
-	g_Boss.bossAIStateTimer = 0.f;
-	g_Boss.bossAttackPlayerTimer = 0.f;
-	g_Boss.bossVoiceLineTimer = 0.f;
-	g_Boss.bossPlayerAngle = 0.f;
-	g_Boss.chargeEndPoint.x = 0;
-	g_Boss.chargeEndPoint.y = 0;
-	g_Boss.speed = 500.f;
-	g_Boss.isTalking = false;
+	boss.AIState = BossAIStates::idle;
+	boss.animState = AnimStates::idleRight;
+	boss.maxHealth = 300.f;
+	boss.health = boss.maxHealth;
+	boss.damageOutput = 0.8f;
+	boss.bossAIStateTimer = 0.f;
+	boss.bossAttackPlayerTimer = 0.f;
+	boss.bossVoiceLineTimer = 0.f;
+	boss.bossPlayerAngle = 0.f;
+	boss.chargeEndPoint.x = 0;
+	boss.chargeEndPoint.y = 0;
+	boss.speed = 500.f;
+	boss.isTalking = false;
 
-	g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
-	g_Boss.sprite.cols = 4;
-	g_Boss.sprite.frames = 4;
-	g_Boss.sprite.currentFrame = 0;
-	g_Boss.sprite.accumulatedTime = 0.0f;
-	g_Boss.sprite.frameTime = 1 / 8.0f;
+	boss.sprite.texture = FetchTexture("boss_anim_idle_right");
+	boss.sprite.cols = 4;
+	boss.sprite.frames = 4;
+	boss.sprite.currentFrame = 0;
+	boss.sprite.accumulatedTime = 0.0f;
+	boss.sprite.frameTime = 1 / 8.0f;
 
-	g_Boss.dstRect.bottom = g_CellArr[53].dstRect.bottom;
-	g_Boss.dstRect.left = g_CellArr[53].dstRect.left;
-	g_Boss.dstRect.width = 2 * g_CellArr[53].dstRect.width;
-	g_Boss.dstRect.height = 2 * g_CellArr[53].dstRect.height;
+	boss.dstRect.bottom = g_CellArr[53].dstRect.bottom;
+	boss.dstRect.left = g_CellArr[53].dstRect.left;
+	boss.dstRect.width = 2 * g_CellArr[53].dstRect.width;
+	boss.dstRect.height = 2 * g_CellArr[53].dstRect.height;
 
 
-	g_Boss.srcRect.width = g_Boss.sprite.texture.width / g_Boss.sprite.cols;
-	g_Boss.srcRect.height = g_Boss.sprite.texture.height;
-	g_Boss.srcRect.bottom = g_Boss.srcRect.height;
+	boss.srcRect.width = boss.sprite.texture.width / boss.sprite.cols;
+	boss.srcRect.height = boss.sprite.texture.height;
+	boss.srcRect.bottom = boss.srcRect.height;
 
 }
-void DrawBossHealth()
+void DrawBossHealth(Boss& boss)
 {
-	if (g_Boss.health != g_Boss.maxHealth && g_Boss.health > 0)
+	if (boss.health != boss.maxHealth && boss.health > 0)
 	{
-		DrawHealthBar(g_Boss.dstRect, g_Boss.health, g_Boss.maxHealth);
+		DrawHealthBar(boss.dstRect, boss.health, boss.maxHealth);
 	}
-	else if (g_Boss.health <= 0)
+	else if (boss.health <= 0)
 	{
-		g_Boss.health = 0;
-		DrawHealthBar(g_Boss.dstRect, g_Boss.health, g_Boss.maxHealth);
+		boss.health = 0;
+		DrawHealthBar(boss.dstRect, boss.health, boss.maxHealth);
 	}
 }
-void DrawBoss()
+void DrawBoss(const Room& room, Boss& boss,const Texture voiceLines[])
 {
-	if (g_CurrentRoom.id != RoomID::bossRoom) return;
-	DrawVoiceLine(g_Boss, g_VoiceLinesArr);
-	DrawBossHealth();
-	DrawTexture(g_Boss.sprite.texture, g_Boss.dstRect, g_Boss.srcRect);
+	if (room.id != RoomID::bossRoom) return;
+	DrawVoiceLine(boss, voiceLines);
+	DrawBossHealth(boss);
+	DrawTexture(boss.sprite.texture, boss.dstRect, boss.srcRect);
 }
-void ChargeAtPlayer(float elapsedSec)
+void ChargeAtPlayer(Boss& boss, float elapsedSec)
 {
+	const float minDistance{ 5.f };
 
-	float minDistance{ 5.f };
-	if ( BossDistanceToChargePoint() > minDistance)
+	if ( BossDistanceToChargePoint(boss) > minDistance)
 	{
-		g_Boss.dstRect.left -= (g_Boss.speed * cosf(g_Boss.bossPlayerAngle)) * elapsedSec;
-		g_Boss.dstRect.bottom -= (g_Boss.speed * sinf(g_Boss.bossPlayerAngle)) * elapsedSec;
+		boss.dstRect.left	-= (boss.speed * cosf(boss.bossPlayerAngle)) * elapsedSec;
+		boss.dstRect.bottom -= (boss.speed * sinf(boss.bossPlayerAngle)) * elapsedSec;
 	}
 	else
 	{
-		g_Boss.AIState = BossAIStates::idle;
-		g_Boss.bossAIStateTimer = 0;
+		boss.AIState = BossAIStates::idle;
+		boss.bossAIStateTimer = 0;
 	}
-
 }
-void UpdateBossAIState(float elapsedSec)
+void UpdateBossAIState(Boss& boss, float elapsedSec)
 {
 	if (g_CurrentRoom.id != RoomID::bossRoom) return;
-	IsBossDead();
-	BossAttackPlayer(elapsedSec);
-	g_Boss.bossAIStateTimer += elapsedSec;
-	float thinkingTime{1.f};
-	int randInt{1 + rand() % 100 };
 
-	int regenChance{ 10 };
-	int spawnMinionsChance{ 20 };
-	int chargeChance{ 70 };
-	switch (g_Boss.AIState)
+	const int randInt			{1 + rand() % 100 };
+	const int regenChance					 { 10 };
+	const int spawnMinionsChance			 { 20 };
+	const int chargeChance					 { 70 };
+	const float thinkingTime				 { 1.f};
+
+	IsBossDead(boss);
+	BossAttackPlayer(boss, g_Player, elapsedSec);
+	boss.bossAIStateTimer += elapsedSec;
+
+	switch (boss.AIState)
 	{
 		case BossAIStates::idle:
 		{
-			if (g_Boss.bossAIStateTimer > thinkingTime)
+			if (boss.bossAIStateTimer > thinkingTime)
 			{
-				g_Boss.isTalking = true;
+				boss.isTalking = true;
 				if (randInt > 0 && randInt <= regenChance)
 				{
-					if (g_Boss.health / g_Boss.maxHealth <= 0.3f)
+					if (boss.health / boss.maxHealth <= 0.3f)
 					{
-						g_Boss.AIState = BossAIStates::regenerate;
-						g_Boss.bossAIStateTimer = 0;
+						boss.AIState = BossAIStates::regenerate;
+						boss.bossAIStateTimer = 0;
 					}
 					break;
 				}
 				else if (randInt > regenChance && randInt <= spawnMinionsChance)
 				{
-					if (g_Boss.health / g_Boss.maxHealth <= 0.5f)
+					if (boss.health / boss.maxHealth <= 0.5f)
 					{
-					g_Boss.AIState = BossAIStates::spawnMinions;
-					g_Boss.bossAIStateTimer = 0;
+					boss.AIState = BossAIStates::spawnMinions;
+					boss.bossAIStateTimer = 0;
 					}
 					break;
 				}
 				else if (randInt > spawnMinionsChance && randInt <= chargeChance)
 				{
-					PrepareToCharge();
-					g_Boss.AIState = BossAIStates::charge;
-					g_Boss.bossAIStateTimer = 0;
+					PrepareToCharge(boss);
+					boss.AIState = BossAIStates::charge;
+					boss.bossAIStateTimer = 0;
 					break;
 				}
 				else
 				{
-					g_Boss.bossAIStateTimer = 0;
+					boss.bossAIStateTimer = 0;
 					break;
 				}
 			}
@@ -2884,33 +2886,33 @@ void UpdateBossAIState(float elapsedSec)
 		}
 		case BossAIStates::charge:
 		{
-			ChargeAtPlayer(elapsedSec);
+			ChargeAtPlayer(boss, elapsedSec);
 			break;
 		}
 		case BossAIStates::spawnMinions:
 		{
-			if (!g_Boss.isTalking)
+			if (!boss.isTalking)
 			{
 				int spawnIdx{ 15 };
 				const int nrOfMinions{ g_MaxEnemiesPerRoom };
 				EnemyShorthand minions[g_MaxEnemiesPerRoom]
-				{ { GetRandomMinion() , spawnIdx		 } ,
+				{{ GetRandomMinion() , spawnIdx }	   ,
 				 { GetRandomMinion() , spawnIdx += 2 } ,
 				 { GetRandomMinion() , spawnIdx += 2 } ,
 				 { GetRandomMinion() , spawnIdx += 2 } ,
-				 { GetRandomMinion() , spawnIdx += 2 } };
+				 { GetRandomMinion() , spawnIdx += 2 }};
 
 				SpawnEnemies(minions);
-				g_Boss.AIState = BossAIStates::idle;
+				boss.AIState = BossAIStates::idle;
 			}
 			break;
 		}
 		case BossAIStates::regenerate:
 		{
-			if (!g_Boss.isTalking)
+			if (!boss.isTalking)
 			{
-				g_Boss.health += 0.2f * g_Boss.maxHealth;
-				g_Boss.AIState = BossAIStates::idle;
+				boss.health += 0.2f * boss.maxHealth;
+				boss.AIState = BossAIStates::idle;
 			}
 			break;
 		}
@@ -2922,83 +2924,83 @@ void UpdateBossAIState(float elapsedSec)
 	}
 
 }
-void PrepareToCharge()
+void PrepareToCharge(Boss& boss)
 {
-	g_Boss.delta.x = g_Boss.dstRect.left - g_Player.dstRect.left;
-	g_Boss.delta.y = g_Boss.dstRect.bottom - g_Player.dstRect.bottom;
-	g_Boss.chargeEndPoint.x = g_Player.dstRect.left;
-	g_Boss.chargeEndPoint.y = g_Player.dstRect.bottom;
-	g_Boss.bossPlayerAngle = GetAngle(g_Boss, g_Player);
+	boss.delta.x = boss.dstRect.left - g_Player.dstRect.left;
+	boss.delta.y = boss.dstRect.bottom - g_Player.dstRect.bottom;
+	boss.chargeEndPoint.x = g_Player.dstRect.left;
+	boss.chargeEndPoint.y = g_Player.dstRect.bottom;
+	boss.bossPlayerAngle = GetAngle(boss);
 }
-void UpdateBossAnimState(float elapsedSec)
+void UpdateBossAnimState(const Room& room, Boss& boss, float elapsedSec)
 {
-	if (g_CurrentRoom.id != RoomID::bossRoom) return;
-	BossLookAtPlayer();
-	switch (g_Boss.animState)
+	if (room.id != RoomID::bossRoom) return;
+	BossLookAtPlayer(g_Boss, g_Player);
+	switch (boss.animState)
 	{
 		case AnimStates::idleRight:
 		{
-			g_Boss.sprite.texture = FetchTexture("boss_anim_idle_right");
-			g_Boss.sprite.frameTime = 1 / 6.0f;
-			g_Boss.sprite.accumulatedTime += elapsedSec;
-			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			boss.sprite.texture = FetchTexture("boss_anim_idle_right");
+			boss.sprite.frameTime = 1 / 6.0f;
+			boss.sprite.accumulatedTime += elapsedSec;
+			if (boss.sprite.accumulatedTime > boss.sprite.frameTime)
 			{
-				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
-				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+				++boss.sprite.currentFrame %= boss.sprite.frames;
+				boss.sprite.accumulatedTime -= boss.sprite.frameTime;
 			}	
-			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			boss.srcRect.left = boss.sprite.currentFrame * boss.srcRect.width;
 			break;
 		}
 		case AnimStates::idleLeft:
 		{
-			g_Boss.sprite.texture = FetchTexture("boss_anim_idle_left");
-			g_Boss.sprite.frameTime = 1 / 6.0f;
-			g_Boss.sprite.accumulatedTime += elapsedSec;
-			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			boss.sprite.texture = FetchTexture("boss_anim_idle_left");
+			boss.sprite.frameTime = 1 / 6.0f;
+			boss.sprite.accumulatedTime += elapsedSec;
+			if (boss.sprite.accumulatedTime > boss.sprite.frameTime)
 			{
-				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
-				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+				++boss.sprite.currentFrame %= boss.sprite.frames;
+				boss.sprite.accumulatedTime -= boss.sprite.frameTime;
 			}
-			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			boss.srcRect.left = boss.sprite.currentFrame * boss.srcRect.width;
 			break;
 		}
 		case AnimStates::runRight:
 		{
-			g_Boss.sprite.texture = FetchTexture("boss_anim_run_right");
-			g_Boss.sprite.frameTime = 1 / 20.0f;
-			g_Boss.sprite.accumulatedTime += elapsedSec;
-			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			boss.sprite.texture = FetchTexture("boss_anim_run_right");
+			boss.sprite.frameTime = 1 / 20.0f;
+			boss.sprite.accumulatedTime += elapsedSec;
+			if (boss.sprite.accumulatedTime > boss.sprite.frameTime)
 			{
-				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
-				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+				++boss.sprite.currentFrame %= boss.sprite.frames;
+				boss.sprite.accumulatedTime -= boss.sprite.frameTime;
 			}
-			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			boss.srcRect.left = boss.sprite.currentFrame * boss.srcRect.width;
 			break;
 		}
 		case AnimStates::runLeft:
 		{
-			g_Boss.sprite.texture = FetchTexture("boss_anim_run_left");
-			g_Boss.sprite.frameTime = 1 / 20.0f;
-			g_Boss.sprite.accumulatedTime += elapsedSec;
-			if (g_Boss.sprite.accumulatedTime > g_Boss.sprite.frameTime)
+			boss.sprite.texture = FetchTexture("boss_anim_run_left");
+			boss.sprite.frameTime = 1 / 20.0f;
+			boss.sprite.accumulatedTime += elapsedSec;
+			if (boss.sprite.accumulatedTime > boss.sprite.frameTime)
 			{
-				++g_Boss.sprite.currentFrame %= g_Boss.sprite.frames;
-				g_Boss.sprite.accumulatedTime -= g_Boss.sprite.frameTime;
+				++boss.sprite.currentFrame %= boss.sprite.frames;
+				boss.sprite.accumulatedTime -= boss.sprite.frameTime;
 			}
-			g_Boss.srcRect.left = g_Boss.sprite.currentFrame * g_Boss.srcRect.width;
+			boss.srcRect.left = boss.sprite.currentFrame * boss.srcRect.width;
 			break;
 		}
 
 		case AnimStates::death:
 		{
-			g_Boss.sprite.texture = FetchTexture("boss_anim_death");
-			g_Boss.sprite.cols = 1;
-			g_Boss.sprite.frames = 1;
-			g_Boss.sprite.currentFrame = 0;
-			g_Boss.sprite.accumulatedTime = 0.0f;
-			g_Boss.sprite.frameTime = 1 / 8.0f;
-			g_Boss.srcRect.width = FetchTexture("boss_anim_death").width;
-			g_Boss.srcRect.height = FetchTexture("boss_anim_death").height;
+			boss.sprite.texture = FetchTexture("boss_anim_death");
+			boss.sprite.cols = 1;
+			boss.sprite.frames = 1;
+			boss.sprite.currentFrame = 0;
+			boss.sprite.accumulatedTime = 0.0f;
+			boss.sprite.frameTime = 1 / 8.0f;
+			boss.srcRect.width = FetchTexture("boss_anim_death").width;
+			boss.srcRect.height = FetchTexture("boss_anim_death").height;
 
 			break;
 
@@ -3006,69 +3008,69 @@ void UpdateBossAnimState(float elapsedSec)
 
 	}
 }
-void BossAttackPlayer(float elapsedSec)
+void BossAttackPlayer(Boss& boss, Player& player, float elapsedSec)
 {
-	g_Boss.bossAttackPlayerTimer += elapsedSec;
+	boss.bossAttackPlayerTimer += elapsedSec;
 	float hitRate{ 0.5f };
 
-	if (IsOverlapping(g_Boss.dstRect, g_Player.dstRect) && g_Boss.bossAttackPlayerTimer > hitRate)
+	if (IsOverlapping(boss.dstRect, player.dstRect) && boss.bossAttackPlayerTimer > hitRate)
 	{
-		g_Player.health -= g_Boss.damageOutput;
-		g_Player.isPlayerHit = true; // new line
-		g_Boss.bossAttackPlayerTimer = 0;
+		player.health -= boss.damageOutput;
+		player.isPlayerHit = true; // new line
+		boss.bossAttackPlayerTimer = 0;
 	}
 }
-void BossLookAtPlayer()
+void BossLookAtPlayer(Boss& boss, Player& player)
 {
-	if (g_Boss.dstRect.left < g_Player.dstRect.left && g_Boss.AIState == BossAIStates::idle)
+	if (boss.dstRect.left < player.dstRect.left && boss.AIState == BossAIStates::idle)
 	{
-		g_Boss.animState = AnimStates::idleRight;
+		boss.animState = AnimStates::idleRight;
 	}
-	else if (g_Boss.dstRect.left > g_Player.dstRect.left && g_Boss.AIState == BossAIStates::idle)
+	else if (boss.dstRect.left > player.dstRect.left && boss.AIState == BossAIStates::idle)
 	{
-		g_Boss.animState = AnimStates::idleLeft;
+		boss.animState = AnimStates::idleLeft;
 	}
-	else if (g_Boss.dstRect.left < g_Player.dstRect.left && g_Boss.AIState == BossAIStates::charge)
+	else if (boss.dstRect.left < player.dstRect.left && boss.AIState == BossAIStates::charge)
 	{
-		g_Boss.animState = AnimStates::runRight;
+		boss.animState = AnimStates::runRight;
 	}
-	else if (g_Boss.dstRect.left > g_Player.dstRect.left && g_Boss.AIState == BossAIStates::charge)
+	else if (boss.dstRect.left > player.dstRect.left && boss.AIState == BossAIStates::charge)
 	{
-		g_Boss.animState = AnimStates::runLeft;
+		boss.animState = AnimStates::runLeft;
 	}
 
 
 }
 
-void InitTotems()
+void InitTotems(Sprite& totemSprite)
 {
-	g_TotemSprite.texture = FetchTexture("lava_totem_anim");
-	g_TotemSprite.cols = 3;
-	g_TotemSprite.frames = 3;
-	g_TotemSprite.currentFrame = 0;
-	g_TotemSprite.accumulatedTime = 0.0f;
-	g_TotemSprite.frameTime = 1 / 5.0f;
+	totemSprite.texture = FetchTexture("lava_totem_anim");
+	totemSprite.cols = 3;
+	totemSprite.frames = 3;
+	totemSprite.currentFrame = 0;
+	totemSprite.accumulatedTime = 0.0f;
+	totemSprite.frameTime = 1 / 5.0f;
 }
-void DrawTotems(Sprite totemsprite)
+void DrawTotems(Sprite& totemSprite, const Room& room)
 {
-	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	if (room.id != RoomID::bossRoom) return;
 	Rectf srcRect{};
-	srcRect.width = totemsprite.texture.width / totemsprite.cols;
-	srcRect.height = totemsprite.texture.height;
-	srcRect.left = totemsprite.currentFrame * srcRect.width;
+	srcRect.width = totemSprite.texture.width / totemSprite.cols;
+	srcRect.height = totemSprite.texture.height;
+	srcRect.left = totemSprite.currentFrame * srcRect.width;
 	srcRect.bottom = srcRect.height;
 
-	for (int i = 2; i <= 10; i+=2) DrawTexture(totemsprite.texture, g_CellArr[i].dstRect, srcRect);
+	for (int i = 2; i <= 10; i+=2) DrawTexture(totemSprite.texture, g_CellArr[i].dstRect, srcRect);
 }
-void UpdateTotems(float elapsedSec)
+void UpdateTotems(Sprite& totemSprite, const Room& room, float elapsedSec)
 {
-	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	if (room.id != RoomID::bossRoom) return;
 
-	g_TotemSprite.accumulatedTime += elapsedSec;
-	if (g_TotemSprite.accumulatedTime > g_TotemSprite.frameTime)
+	totemSprite.accumulatedTime += elapsedSec;
+	if (totemSprite.accumulatedTime > totemSprite.frameTime)
 	{
-		++g_TotemSprite.currentFrame %= g_TotemSprite.frames;
-		g_TotemSprite.accumulatedTime -= g_TotemSprite.frameTime;
+		++totemSprite.currentFrame %= totemSprite.frames;
+		totemSprite.accumulatedTime -= totemSprite.frameTime;
 	}
 
 
@@ -3076,9 +3078,10 @@ void UpdateTotems(float elapsedSec)
 
 std::string GetRandomMinion()
 {
-	const int nrOfMinions{ 5 };
-	int randIdx{ rand() % nrOfMinions };
-	std::string minionsArr[nrOfMinions]{"", "rusher", "zombie", "bat", "archer"};
+	const int nrOfMinions			{ 5 };
+	const int randIdx		{ rand() % nrOfMinions };
+
+	std::string minionsArr[nrOfMinions]{"", "rusher", "gnawer", "necrospawn"};
 
 	return minionsArr[randIdx];
 }
@@ -3097,7 +3100,7 @@ void DrawVoiceLine(const Boss& boss,const Texture voiceLinesArr[])
 	const float shift{ 10.f };
 	textBox.x = boss.dstRect.left + shift;
 	textBox.y = boss.dstRect.bottom + boss.dstRect.height + shift;
-	if (g_Boss.isTalking)
+	if (boss.isTalking)
 	{
 	if (boss.AIState == BossAIStates::idle) DrawTexture(voiceLinesArr[0], textBox);
 	if (boss.AIState == BossAIStates::spawnMinions) DrawTexture(voiceLinesArr[1], textBox);
@@ -3105,15 +3108,15 @@ void DrawVoiceLine(const Boss& boss,const Texture voiceLinesArr[])
 	if (boss.AIState == BossAIStates::charge) DrawTexture(voiceLinesArr[3], textBox);
 	}
 }
-void UpdateVoiceLine(Boss& boss, float elapsedSec)
+void UpdateVoiceLine(Boss& boss, const Room& room, float elapsedSec)
 {
-	if (g_CurrentRoom.id != RoomID::bossRoom) return;
+	if (room.id != RoomID::bossRoom) return;
 	const float voiceLineDuration{ 1.f };
 
-	if (g_Boss.isTalking) boss.bossVoiceLineTimer += elapsedSec;
+	if (boss.isTalking) boss.bossVoiceLineTimer += elapsedSec;
 	if (boss.bossVoiceLineTimer > voiceLineDuration)
 	{
-		g_Boss.isTalking = false;
+		boss.isTalking = false;
 		boss.bossVoiceLineTimer = 0;
 	}
 }
@@ -3383,7 +3386,7 @@ void LoadRoom(const Room& roomToLoad)
 	}
 	if (roomToLoad.id == RoomID::bossRoom)
 	{
-		InitBoss();
+		InitBoss(g_Boss);
 	}
 }
 void OpenDoors(Cell cellArr[], int size)
